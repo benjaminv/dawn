@@ -1,0 +1,21 @@
+[environments.dev]
+store = "dawn-original.myshopify.com"
+path = "./src/theme"
+ignore = []
+output = "json"
+live = false
+allow-live = false
+
+# Environment used for theme deployments
+[environments.deployment]
+store = "dawn-original.myshopify.com"
+path = "./src/theme"
+ignore = ['config/settings_data.json', 'templates/*.json', "sections/*.json", "locales/*.json"]
+output = "json"
+
+[environments.sync]
+store = "dawn-original.myshopify.com"
+ignore = []
+only = ["templates/*.json", "sections/*.json", "locales/*.json", "config/*.json"]
+nodelete = true
+path = "./src/theme"

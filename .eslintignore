@@ -1,0 +1,4 @@
+src/theme/assets
+node_modules
+dist
+build

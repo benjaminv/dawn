@@ -34,6 +34,7 @@
     {%- if settings.animations_reveal_on_scroll -%}
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
+    {%- render 'vite-tag' with 'app.js' -%}
 
     {{ content_for_header }}
 
@@ -252,6 +253,7 @@
     {% endstyle %}
 
     {{ 'base.css' | asset_url | stylesheet_tag }}
+    {%- render 'vite-tag' with 'app.css' -%}
 
     {%- unless settings.type_body_font.system? -%}
       {% comment %}theme-check-disable AssetPreload{% endcomment %}

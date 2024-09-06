@@ -1,0 +1,44 @@
+/* @import url('https://use.typekit.net/rkx5yma.css');*/ /* font-family and faces for century-gothic (Shopify now offers it) and museo-slab */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* alpinejs cloak */
+[x-cloak] {
+  display: none !important;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6,
+.heading,
+label,
+button,
+.button-primary,
+.button-secondary {
+  @apply !font-heading;
+}
+
+/* Dawn uses flexbox for the grid */
+.grid {
+  @apply flex;
+}
+
+/* thus we need to define the grid display */
+.d-grid {
+  @apply grid;
+}

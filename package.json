@@ -1,0 +1,48 @@
+{
+  "name": "dawn-boilerplate",
+  "version": "1.5.0",
+  "description": "a refreshed theme based on Dawn Shopify Theme V15",
+  "main": "index.js",
+  "repository": "git@github.com:benjaminv/dawn.git",
+  "author": "ben <benvee@gmail.com>",
+  "private": true,
+  "license": "ISC",
+  "scripts": {
+    "shopify:login": "shopify theme list --environment sync",
+    "shopify:sync": "shopify theme pull --environment sync",
+    "shopify:push": "shopify theme push --environment deployment",
+    "deploy": "npm run build && npm run shopify:push",
+    "deploy:new": "shopify theme push --path ./src/theme --unpublished",
+    "dev": "concurrently --raw --kill-others \"npm run dev:shopify\" \"npm run dev:vite\"",
+    "dev:shopify": "shopify theme dev --path ./src/theme --live-reload full-page",
+    "dev:vite": "vite",
+    "format": "prettier -w ./src --cache --plugin-search-dir=.",
+    "build": "vite build"
+  },
+  "devDependencies": {
+    "@by-association-only/vite-plugin-shopify-clean": "^2.0.0",
+    "@shopify/cli": "^3.66.1",
+    "@shopify/prettier-plugin-liquid": "^1.5.0",
+    "@shopify/theme": "^3.58.2",
+    "@tailwindcss/typography": "^0.5.15",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^8.2.2",
+    "eslint": "^9.9.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "postcss": "^8.4.45",
+    "postcss-import": "^16.1.0",
+    "prettier": "^3.3.3",
+    "prettier-plugin-tailwindcss": "^0.6.6",
+    "sass": "^1.78.0",
+    "tailwindcss": "^3.4.10",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.3",
+    "vite-plugin-mkcert": "^1.17.6",
+    "vite-plugin-shopify": "^3.0.1"
+  },
+  "dependencies": {
+    "@glidejs/glide": "^3.6.2",
+    "alpinejs": "^3.14.1"
+  }
+}
