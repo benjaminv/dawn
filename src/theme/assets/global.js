@@ -619,6 +619,7 @@ class ModalDialog extends HTMLElement {
   connectedCallback() {
     if (this.moved) return;
     this.moved = true;
+    this.dataset.section = this.closest('.shopify-section').id.replace('shopify-section-', '');
     document.body.appendChild(this);
   }
 
@@ -1059,8 +1060,7 @@ class VariantSelects extends HTMLElement {
   connectedCallback() {
     this.addEventListener('change', (event) => {
       const target = this.getInputForEventTarget(event.target);
-      this.currentVariant = this.getVariantData(target.id);
-      this.updateSelectedSwatchValue(event);
+      this.updateSelectionMetadata(event);
 
       publish(PUB_SUB_EVENTS.optionValueSelectionChange, {
         data: {
@@ -1072,10 +1072,15 @@ class VariantSelects extends HTMLElement {
     });
   }
 
-  updateSelectedSwatchValue({ target }) {
+  updateSelectionMetadata({ target }) {
     const { value, tagName } = target;
 
     if (tagName === 'SELECT' && target.selectedOptions.length) {
+      Array.from(target.options)
+        .find((option) => option.getAttribute('selected'))
+        .removeAttribute('selected');
+      target.selectedOptions[0].setAttribute('selected', 'selected');
+
       const swatchValue = target.selectedOptions[0].dataset.optionSwatchValue;
       const selectedDropdownSwatchValue = target
         .closest('.product-form__input')
@@ -1103,16 +1108,8 @@ class VariantSelects extends HTMLElement {
     return target.tagName === 'SELECT' ? target.selectedOptions[0] : target;
   }
 
-  getVariantData(inputId) {
-    return JSON.parse(this.getVariantDataElement(inputId).textContent);
-  }
-
-  getVariantDataElement(inputId) {
-    return this.querySelector(`script[type="application/json"][data-resource="${inputId}"]`);
-  }
-
   get selectedOptionValues() {
-    return Array.from(this.querySelectorAll('select, fieldset input:checked')).map(
+    return Array.from(this.querySelectorAll('select option[selected], fieldset input:checked')).map(
       ({ dataset }) => dataset.optionValueId
     );
   }
