@@ -4,7 +4,7 @@ module.exports = {
   plugins: [require('@tailwindcss/typography')],
   theme: {
     fontFamily: {
-      heading: ['"IBM Plex Sans"', 'sans-serif'],
+      sans: ['"IBM Plex Sans"', 'sans-serif'],
       serif: ['"IBM Plex Serif"', 'serif'],
       mono: ['"IBM Plex Mono"', 'monospace'],
     },
