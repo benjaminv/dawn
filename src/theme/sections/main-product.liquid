@@ -660,6 +660,8 @@
                 </product-recommendations>
               {%- when 'icon-with-text' -%}
                 {% render 'icon-with-text', block: block %}
+              {%- when 'swymcs-wishlist-button' -%}
+                {% render 'swym-wishlist-button', block: block, product: product %}
             {%- endcase -%}
           {%- endfor -%}
           <a href="{{ product.url }}" class="link product__view-details animate-arrow">
@@ -2072,6 +2074,135 @@
           "default": "t:sections.main-product.blocks.icon_with_text.settings.heading_3.default",
           "label": "t:sections.main-product.blocks.icon_with_text.settings.heading_3.label",
           "info": "t:sections.main-product.blocks.icon_with_text.settings.heading.info"
+        }
+      ]
+    },
+    {
+      "type": "swymcs-wishlist-button",
+      "name": "swym wishlist button",
+      "limit": 1,
+      "settings": [
+        {
+          "id": "swym_wishlist_button_type",
+          "label": "Button Type",
+          "default": "icon",
+          "type": "select",
+          "options": [
+            {
+              "value":"button",
+              "label": "Button"
+            },
+            {
+              "value":"icon",
+              "label": "Icon"
+            },{
+              "value": "icontext",
+              "label": "Icon + Text"
+            },{
+              "value": "customicon",
+              "label": "Custom Icon"
+            },{
+              "value": "customicontext",
+              "label": "Custom Icon + Text"
+            }
+          ]
+        },{
+          "type": "checkbox",
+          "id": "disable_added_to_wishlist",
+          "label": "Disable After Added to wishlist",
+          "default": false
+        },{
+          "type": "color",
+          "id": "swymcs_button_background_color",
+          "label": "Button Background color",
+          "default": "transparent"
+        },{
+          "type": "color",
+          "id": "add_to_wishlist_color",
+          "label": "Add to wishlist color",
+          "default": "#f6e2e2"
+        },
+        {
+          "type": "color",
+          "id": "added_to_wishlist_color",
+          "label": "Added to wishlist color",
+          "default": "#f30202"
+        },{
+          "type": "text",
+          "id": "add_to_wishlist_label",
+          "label": "Add to wishlist lable",
+          "default": "Add to wishlist"
+        },
+        {
+          "type": "text",
+          "id": "added_to_wishlist_label",
+          "label": "Added to wishlist lable",
+          "default": "Added to wishlist"
+        },
+        {
+      "type": "select",
+      "id": "swymcs_button_type",
+      "label": "Type",
+      "options": [
+        {
+          "value": "solid",
+          "label": "solid"
+        },
+        {
+          "value": "outline",
+          "label": "outline"
+        }
+      ],
+      "default": "solid"
+    },{
+      "type": "select",
+      "id": "swymcs_button_width",
+      "label": "Width",
+      "options": [
+        {
+          "value": "100%",
+          "label": "Full Width"
+        },
+        {
+          "value": "fit-content",
+          "label": "Content Width"
+        }
+      ],
+      "default": "fit-content"
+    },{
+      "type": "select",
+      "id": "swymcs_button_align",
+      "label": "Align",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+        {
+          "type": "image_picker",
+          "id": "swym_wishlist_button_add_to_wishlist_icon",
+          "label": "Add to wishlist custom image icon"
+        },{
+          "type": "image_picker",
+          "id": "swym_wishlist_button_added_to_wishlist_icon",
+          "label": "Added to wishlist custom image icon"
+        },{
+          "type": "textarea",
+          "id": "swym_wishlist_button_custom_css",
+          "label": "Button Custom CSS",
+          "placeholder":"#swym-wishlist-button{  }",
+          "info": "Add your custom CSS code here."
         }
       ]
     }

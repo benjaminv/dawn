@@ -1,0 +1,653 @@
+<swym-wishlist-popup id="swymcs-wishlist-popup" class="swym-hide-container">
+    <div id="swymcs-wishlist-popup-container" class="swymcs-wishlist-popup-container swymcs-popup-body">
+        <div id="swymcs-account-popup-header">
+            <div id="swymcs-wishlist-popup-title" class="swymcs-popup-title swymcs-title swymcs-popup-title swymcs-buttons-container">
+                <img id="swymcs-wishlist-popup-product-image" src="https://source.unsplash.com/random" alt="Product Title"/>
+                <span id="swymcs-wishlist-popup-product-title">Product Title</span>
+            </div>
+            <button id="swymcs-close-wishlist-popup" class="swymcs-popup-close-button swymcs-button">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" role="presentation" class="icon icon-close" fill="none" viewBox="0 0 18 17" height="15px"><path d="M.865 15.978a.5.5 0 00.707.707l7.433-7.431 7.579 7.282a.501.501 0 00.846-.37.5.5 0 00-.153-.351L9.712 8.546l7.417-7.416a.5.5 0 10-.707-.708L8.991 7.853 1.413.573a.5.5 0 10-.693.72l7.563 7.268-7.418 7.417z" fill="#434655" stroke="#434655\" stroke-width="2"></path></svg>
+            </button>
+        </div>
+        <div id="swymcs-create-list-container" class="swym-hide-container swymcs-popup-text-field">
+            <div class="swymcs-create-list-field">
+                <span id="swymcs-create-list-image-text" class="swymcs-list-item-image-text">MW</span>
+                <input type="text" class="swymcs-popup-input" id="swymcs-create-list-field" placeholder="Saved Items"/>
+            </div>
+            <span class="swymcs-popup-error" id="swymcs-create-list-error"></span>
+        </div>
+        <ul id="swymcs-wishlist-lists"></ul>
+        <div id="swymcs-wishlist-popup-buttons-container" class="swymcs-buttons-container swymcs-popup-buttons-container">
+            <button id="swymcs-create-list-button" class="swymcs-button swymcs-secondary-button" aria-label="Create List">
+                Create List
+            </button>
+            <button id="swymcs-cancel-list-button" class="swym-hide-container swymcs-button swymcs-secondary-button" aria-label="Cancel">
+                Cancel
+            </button>
+            <button id="swymcs-save-new-list-button" class="swym-hide-container swymcs-button swymcs-primary-button" aria-label="Save New List">
+                Save & Add To List
+            </button>
+            <button id="swymcs-modify-list-button" disabled class="swymcs-button swymcs-primary-button" aria-label="Add to List">
+                Add to List
+            </button>
+        </div>
+    </div>
+</swym-wishlist-popup>
+
+<script>
+    if(!customElements.get('swym-wishlist-popup')){
+        class SwymWishlistPopup extends HTMLElement{
+            constructor(){
+                super();
+                this._initializeSwymComponent();
+            }
+
+            // Swym Callbacks
+
+            _initializeSwymComponent(){
+                if (!window.SwymCallbacks) window.SwymCallbacks = [];
+                window.SwymCallbacks.push(this._init.bind(this));
+            }
+
+            // Fetch Lists 
+
+            _fetchLists () {
+                return new Promise(async (resolve, reject) => {
+                    window._swat.fetchLists({
+                      callbackFn: lists => resolve(lists),
+                      errorFn: err => reject(err)
+                    });
+                });
+            }
+
+            // Create New List
+
+            _createNewList () {
+                const listName = this.createListTextField.value.trim();
+                const onSuccess = async (list) => {
+                    await this._renderListsContainer();
+                    this.modifyListBtn.dispatchEvent(new CustomEvent('click'));
+                }
+                const onError = error => console.log("Error while creating a List", error);
+                window._swat.createList({ "lname": listName }, onSuccess, onError);
+            }
+
+            /**  Add & Remove Products from the lists. 
+            *  @param {object} product - The product object to be added or removed.
+            *   @param {Array} lids - An array of list IDs to which the product will be added or from which the product will be removed.
+            *   @param {string} action - The action to perform, either 'add' to add the product to the lists or 'remove' to remove the product from the lists.
+            */
+
+            async _handleListsAction(product, lids, action){
+                const onSuccess = async (response) => {
+                    this.lists = await this._fetchLists();
+                }
+                const onError = error => window._swat.ui.uiRef.showErrorNotification({message: error.description});
+                if(lids.length > 0){
+                    if(action == 'add')
+                        await window._swat.addProductToLists(product, lids, onSuccess, onError);
+                    else 
+                       await window._swat.removeProductFromLists(product, lids, onSuccess, onError);
+                }
+            }
+
+            /**
+            *   Callback function invoked when Swym is initialized.
+            *   Initializes selectors and attaches event listeners for the popup component.
+            **/
+
+            _init(swat){
+                this._initializeSelectors();
+                this._attachEventListeners();
+            }
+
+            // Initiliases Selectors
+
+            async _initializeSelectors(){
+                this.body = document.body;
+                this.popup = this;
+                this.closeBtn = this.querySelector('#swymcs-close-wishlist-popup');
+                this.popupTitle = this.querySelector("#swymcs-wishlist-popup-product-title");
+                this.popupImage = this.querySelector('#swymcs-wishlist-popup-product-image');
+                this.createListBtn = this.querySelector('#swymcs-create-list-button');
+                this.cancelCreateListBtn = this.querySelector('#swymcs-cancel-list-button');
+                this.saveNewListBtn = this.querySelector('#swymcs-save-new-list-button');
+                this.modifyListBtn = this.querySelector('#swymcs-modify-list-button');
+                this.listsContainer = this.querySelector('#swymcs-wishlist-lists');
+                this.createListContainer = this.querySelector('#swymcs-create-list-container');
+                this.createListTextField = this.querySelector('#swymcs-create-list-field');
+                this.createListError = this.querySelector('#swymcs-create-list-error');
+                this.createListImagetext = this.querySelector('#swymcs-create-list-image-text');
+                this.defaultListTilte = 'Saved List';
+                this.errorStrings = {
+                    "emptyString": "{{ 'List name required' }}",
+                    "shortString": "{{ 'Min. 3 characters required' }}",
+                    "listLimitString": "{{ 'List limit of 10 Wishlists reached, please delete a wishlist to create newer wishlists.' }}",
+                    "sameListString": "{{ ' already exists! Please enter a unique name.' }}"
+                };
+            }
+
+            // Attaches event listeners to relevant selectors.
+
+            _attachEventListeners(){
+                this.body.addEventListener('click', this._overlayEvent.bind(this));
+                this.closeBtn.addEventListener('click', this._hide.bind(this));
+                this.createListBtn.addEventListener('click', this._showCreateList.bind(this));
+                this.cancelCreateListBtn.addEventListener('click', this._hideCreateList.bind(this));
+                this.modifyListBtn.addEventListener('click', this._modifyLists.bind(this));
+                this.saveNewListBtn.addEventListener('click', this._validateForm.bind(this));
+                this.createListTextField.addEventListener('input', this._validateField.bind(this));
+                this.listsContainer.addEventListener('click', this._updateListHandler.bind(this));
+            }
+
+            // Displays the List selection Popup
+
+            _show () {
+                this.popup.classList.add('swym-active-popup');
+                this.body.classList.add('no-scroll');
+                this._createHeader();
+                this._renderLists();
+                this._toggleVisibility(this.popup, true)
+            }
+
+            // Hides the List selection Popup
+
+            _hide () {
+                this.popup._toggleVisibility(this.popup, false);
+                this.popup._hideCreateList();
+                this.popup.classList.remove('swym-active-popup');
+                this.body.classList.remove('no-scroll');
+                this.listsContainer.innerHTML = '';
+                this.createListTextField.value = '';
+                this.createListError.textContent = '';
+            }
+
+            // Populates the content of the list selection popup header with product details
+
+            _createHeader () {
+                this.popupImage.src = window.currentActiveProduct?.featured_image || window.currentActiveVariant?.featured_image?.src; 
+                this.popupTitle.textContent = window.currentActiveProduct.title;
+            }
+
+            // Main function for rendering list selection popup body
+
+            async _renderLists(){
+                this.lists = await this._fetchLists(); 
+                this.lists.length ? this._renderListsContainer() : this._showCreateList();
+            }
+
+            /**
+            *   Renders the wishlist lists into the listsContainer element based on fetched data.
+            *   Generates HTML for each list item with checkboxes and labels.
+            *   Updates checkbox states based on whether variants are already in the lists.
+            */
+
+            async _renderListsContainer(){
+                const product = window.currentActiveProduct;
+                this.lists = await this._fetchLists(); 
+                let html = ``;
+                const sortedLists = this.lists.sort((a,b) => b.uts - a.uts);
+                sortedLists.forEach((list, index) => {
+                    const imageHtml = list.listcontents.length ? `<img src="${list.listcontents[0].iu}" alt="${list.lname}">` : `<span class="swymcs-list-item-image-text">${list.lname[0]}</span>`;
+                    const isVariantInList = product.variants.some(variant => list.listcontents.some(item => item.epi === variant.id));
+                    const isChecked = isVariantInList ? 'checked' : '';
+                    html += `
+                        <li class="swymcs-wishlist-select-lists">
+                            <input type="checkbox" class="${isVariantInList ? 'variant-in-wishlist' : ''}" data-lid="${list.lid}" ${isChecked} id="swymcs-wishlist-checkbox--${list.lid}"/>
+                            <label class="swymcs-buttons-container swymcs-button swymcs-popup-button swymcs-buttons-container swymcs-select-list" for="swymcs-wishlist-checkbox--${list.lid}" aria-label="${list.lname}">
+                                ${imageHtml}
+                                <div class="swymcs-wishlist-title">${list.lname}</div>
+                            </label>
+                        </li>
+                    `;
+                });
+                this.listsContainer.innerHTML = html;
+                this.listsContainer.querySelectorAll('input[type="checkbox"]')[0].checked = true;
+            }
+
+            // Displays the "Create New List" form along with related components
+
+            _showCreateList(){
+                this.createListTextField.placeholder = `${this.defaultListTilte} ${this.lists.length + 1}`;
+                this.createListTextField.focus();
+                this._toggleVisibility(this.createListBtn, false);
+                this._toggleVisibility(this.listsContainer, false);
+                this._toggleVisibility(this.modifyListBtn, false);
+                this._toggleVisibility(this.createListContainer, true);
+                this._toggleVisibility(this.cancelCreateListBtn, true);
+                this._toggleVisibility(this.saveNewListBtn, true);
+            }
+
+            // Hides the "Create New List" form along with related components
+
+            _hideCreateList(){
+                this._toggleVisibility(this.createListContainer, false);
+                this._toggleVisibility(this.cancelCreateListBtn, false);
+                this._toggleVisibility(this.saveNewListBtn, false);
+                this._toggleVisibility(this.createListBtn, true);
+                this._toggleVisibility(this.listsContainer, true);
+                this._toggleVisibility(this.modifyListBtn, true);
+            }
+
+            // Handles click events on the overlay to close the popup.
+
+            _overlayEvent(evt){
+                evt.target.nodeName == 'BODY' && this._hide();
+            }
+
+            /**
+            * Modifies the lists by adding or removing the current active product based on user selections.
+            *
+            * 1. Constructs a product object using the currently active variant ID, product ID, and product URL.
+            * 2. Separates the list actions into two arrays: one for adding to lists and one for removing from lists.
+            * 3. Calls _handleListsAction to add the product to the specified lists.
+            * 4. Calls _handleListsAction to remove the product from the specified lists, and upon completion:
+            *    - Removes the 'swym-added' class from all collection icons after a delay of 500ms.
+            *    - Hides the wishlist popup.
+            */
+
+
+            _modifyLists (){
+                const product = {
+                    epi: window.currentActiveVariantId,
+                    empi: window.currentActiveProduct.id,
+                    du: window.currentActiveProduct.url
+                };
+                const { addToLids, removeFromLids } = this._separateListActions();
+                this._handleListsAction(product, addToLids, 'add');
+                this._handleListsAction(product, removeFromLids, 'remove').then(() => {
+                    setTimeout(function(){
+                        document.querySelectorAll('swym-collection-icon button').forEach(icon => icon.classList.remove('swym-added'));
+                        document.querySelector('swym-wishlist-popup')._hide();
+                    }, 500);
+                });
+            }
+
+            /**
+            *   Handles list selection updates in the wishlist popup.
+            *   Updates globalActionArray based on checkbox states (add or remove actions).
+            *   Calls _toggleWishlistButtonState to update button state accordingly.
+            *   @param {Event} evt - The event object from the checkbox click.
+
+            *   Click events are delegated to listsContainer, avoiding the need for individual checkbox handlers.
+            */
+
+            _updateListHandler(evt){
+                if(evt.target == this.listsContainer) return;
+                let listInputs = this.listsContainer.querySelectorAll('input[type="checkbox"]');
+                this.globalActionArray = [];
+                listInputs.forEach((input) => {
+                    if (!input.checked && input.classList.contains("variant-in-wishlist")) {
+                        this.globalActionArray.push({
+                            actionType: 'remove',
+                            listId: `${input.getAttribute("data-lid")}`
+                        });
+
+                    } else if (input.checked && !input.classList.contains("variant-in-wishlist")) {
+                        this.globalActionArray.push({
+                            actionType: 'add',
+                            listId: `${input.getAttribute("data-lid")}`
+                        });
+                    }
+                });
+                this._toggleWishlistButtonState();
+            }
+
+
+            /**
+            *   Toggles the visibility of a container by adding or removing the 'swym-hide-container' class.
+            *   @param {HTMLElement} selector - The HTML element representing the container to show or hide.
+            *   @param {boolean} show - A boolean indicating whether to show (true) or hide (false) the container.
+            */
+
+            _toggleVisibility(selector, show) {
+                selector.classList.toggle('swym-hide-container', !show);
+            }
+
+            // Updates the state and text content of the modifyListBtn based on globalActionArray.
+
+            _toggleWishlistButtonState(){
+                if (this.globalActionArray.length === 0) {
+                    this.modifyListBtn.setAttribute("disabled", true);
+                    this.modifyListBtn.textContent = 'Select Lists';
+                } else {
+                    const hasRemoveAction = this.globalActionArray.some((action) => action.actionType === 'remove');
+                    this.modifyListBtn.removeAttribute("disabled");
+                    this.modifyListBtn.textContent = hasRemoveAction ? 'Update Lists' : 'Add to Lists';
+                }
+            }
+
+            /**
+            *   Separates list IDs in globalActionArray into two groups: lists for adding and removing the product.
+            *   Returns addToLids and removeFromLids objects with corresponding list IDs.
+            */
+
+            _separateListActions() {
+                const addToLids = [];
+                const removeFromLids = [];
+                this.globalActionArray.forEach(listAction => {
+                    listAction.actionType === 'add' ? addToLids.push(listAction.listId) : removeFromLids.push(listAction.listId);
+                });
+                return { addToLids, removeFromLids };
+            }
+
+            // Validates form input before creating a new list.
+
+            _validateForm(){
+                const listStatus = this._validateField();
+                if(!listStatus) return;
+                this._createNewList();
+            }
+
+            // Validates user input for creating a new list, managing errors and updating the display accordingly.
+
+            _validateField(evt){
+                const listName = this.createListTextField.value.trim().toLowerCase();
+                let error = { 'status': false, 'type': '' }
+                listName.length < 3 && (error.status = true, error.type = 'isShortString');
+                listName =='' && (error.status = true, error.type = 'isBlank');
+                this.lists.length >= 10 && (error.status = true, error.type = 'isListsLimitString');
+                this.lists.find(list => list.lname.trim().toLowerCase() == listName) && (error.status = true, error.type = 'isSameListNameString');
+                this.createListImagetext.textContent = (error.status && error.type == 'isBlank') ? 'MW' : this.createListTextField.value.substr(0,2);
+                if(error.status){
+                    switch(error.type){
+                        case 'isBlank': {
+                            this.createListError.textContent = this.errorStrings.emptyString;
+                            break;
+                        }
+                        case 'isShortString': {
+                            this.createListError.textContent = this.errorStrings.shortString;
+                            break;
+                        }
+                        case 'isListsLimitString': {
+                            this.createListError.textContent = this.errorStrings.listLimitString;
+                            break;
+                        }
+                        case 'isSameListNameString': {
+                            this.createListImagetext.textContent = 
+                            this.createListError.textContent = `'${listName}'` + this.errorStrings.sameListString;
+                            break;
+                        }
+                    }
+                    return false;
+                } else this.createListError.textContent = '';  
+                return true;
+            }
+
+            // Prepare Custom Success notification
+
+            _prepareCustomSuccessNotification(listCount){
+                const [title, image] = [window.currentActiveProduct.title, window.currentActiveProduct?.featured_image ||  window.currentActiveVariant?.featured_image?.src];
+                const html = `
+                    <style>
+                        .swym-notification-success-inner .swym-image{ display: none !important }
+                        #swym-custom-notification-content { display: flex; gap: 10px; align-items: center; cursor: pointer }
+                        #swym-custom-notification-content #swym-custom-image-container { min-height: 50px; min-width: 50px; max-height: 50px; max-width: 50px }
+                        #swym-custom-notification-content #swym-custom-image-container #swym-custom-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50% }
+                        #swym-custom-notification-content #swym-custom-title-container { font-weight: 500; font-size: 14px }
+                    </style>
+                    <div id="swym-custom-notification-content" onclick="window._swat.ui.open()">
+                        <div id="swym-custom-image-container">
+                            <img id="swym-custom-image" src="${image}" alt="wishlisted product image"/>
+                        </div>
+                        <div id="swym-custom-title-conatainer"><strong>${title}</strong> has been added to <strong>${listCount} ${listCount == 1 ? 'list!' : 'lists!'}</strong></div>
+                    </div>
+                `;
+                window._swat.ui.uiRef.showSuccessNotification({ message: `${html}` });
+            };
+        }
+        customElements.define('swym-wishlist-popup', SwymWishlistPopup);
+    }
+</script>
+<style>
+    body.no-scroll { overflow-y: hidden }
+    body.no-scroll::after {
+        position: fixed; content: ''; width: 100vw; height: 100vh; inset: 0; background-color: #000; opacity: 0.4; z-index: 999999999;
+    }
+    .swym-active-popup {
+        z-index: 9999999999;
+    }
+    .swymcs-popup-body {
+        position: fixed; width: 400px;
+        top: 45%; left: 50%;
+        transform: translate(-50%, -45%);
+        background: #fff; height: auto; 
+        display: flex; flex-direction: column; 
+        gap: 1.5rem; z-index: 9999; 
+        padding: 32px 47px;
+    }
+
+    .swym-hide-container { display: none !important }
+
+    .swymcs-button { 
+        border-radius: unset;
+        background: unset;
+        border: unset;
+        outline: unset;
+        cursor: pointer;
+        font-family: inherit; 
+        font-size: 16px; 
+        color: inherit;
+    }
+
+    .swymcs-buttons-container { display: flex; gap: 1rem; align-items: center }
+    .swymcs-layout-vertical { flex-direction: column }
+    .swymcs-primary-button, .swymcs-secondary-button { width: 100%; min-height: 35px }
+    .swymcs-primary-button { color: #fff; background-color: #434655; font-weight: 600 }
+    .swymcs-secondary-button { 
+        color: #434655; background-color: #fff; 
+        font-weight: 400 !important; font-family: inherit !important 
+    } 
+    #swymcs-wishlist-popup { position: relative }
+    
+    .swymcs-popup-title {
+        font-weight: 600;
+        font-family: inherit;
+        margin-block: 0;
+        font-size: 18px;
+        font-family: var(--font-heading-family);
+    }
+
+    .swymcs-popup-close-button {
+        font-size: 18px;
+        font-family: inherit;
+        font-weight: 600;
+        text-transform: lowercase;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+    }
+    
+    .swymcs-popup-error { font-size: 14px; color: red; margin-block: 10px; font-style: italic }
+    .swymcs-popup-input{
+        width: 100%;
+        background: #fff;
+        padding: 12px 10px;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 14px;
+        letter-spacing: .05em;
+        color: #434655;
+        border: 1px solid #434655;
+        font-family: var(--font-body-family);
+    }
+    .swymcs-popup-input:focus-visible {
+        outline: none;
+        outline-offset: initial;
+        box-shadow: none;
+    }
+
+    .swymcs-popup-text-field { margin-bottom: 2rem }
+    .swymcs-popup-label {
+        font-weight: 300;
+        font-size: 11px;
+        line-height: 13px;
+        color: #828282;
+        font-style: italic;
+    }
+  .swymcs-header-list-item img {
+        height: 35px; width: 35px; object-fit: cover;
+        border-radius: 50%;
+    }
+    .swymcs-list-item-image-text {
+        height: 35px;
+        width: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #434655;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    /* SWYM WISHLIST POPUP */
+    #swymcs-wishlist-popup-container { min-width: 500px; max-width: 600px; padding: 50px 0; max-height: 96% }
+    #swymcs-wishlist-popup-title {
+        display: flex;
+        padding: 0 50px 24px;
+        position: relative;
+        box-sizing: border-box;
+    }
+    #swymcs-wishlist-popup-product-title { text-overflow: ellipsis; overflow: hidden; white-space: nowrap }
+    #swymcs-wishlist-popup-title #swymcs-wishlist-popup-product-title::after {
+        content: " ";
+        width: calc( 100% - 100px);
+        position: absolute;
+        bottom: 0;
+        height: 2px;
+        background: #c4c4c4;
+        left: 50px;
+    }
+    #swymcs-create-list-container, #swymcs-wishlist-lists, #swymcs-account-popup-buttons-container {
+        overflow: auto;
+        padding: 0 50px;
+    }
+    #swymcs-wishlist-popup img {
+        height: 35px;
+        width: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    #swymcs-wishlist-popup-title img {
+        height: 45px;
+        width: 45px;
+    }
+    #swymcs-wishlist-lists { list-style: none }
+    .swymcs-wishlist-select-lists label { width: 100% }
+    .swymcs-wishlist-select-lists {
+        padding: 15px 30px 15px 0;
+        display: flex;
+        border-bottom: 1px solid #cacbcf;
+        align-items: center;
+        position: relative;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 14px;
+        letter-spacing: .05em;
+        border-radius: 42px;
+    }
+    .swymcs-wishlist-select-lists input { position: absolute; right: 0 }
+    .swymcs-create-list-field {
+        padding: 15px 30px 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .swymcs-create-list-field .swymcs-list-item-image-text{ min-width: 35px }
+        
+    /* CUSTOM CHECKBOX CSS */
+    .swymcs-wishlist-select-lists input{ position: absolute; left: 9999px }
+    .swymcs-wishlist-select-lists input + label{
+        position: relative;
+        padding-left: 15px;
+        cursor: pointer;
+    }
+    .swymcs-wishlist-select-lists input + label:before{
+        content: '';
+        position: absolute;
+        right: -20px;
+        
+        width: 15px;
+        height: 15px;
+        border: 0.5px solid #434655;
+        background: #FFF;
+        -webkit-border-radius: 2px;
+        -moz-border-radius: 2px;
+        border-radius: 2px;
+    }
+    .swymcs-wishlist-select-lists input + label:after{
+        content: '';
+        background: #1e1e1e;
+        height: 10px;
+        width: 10px;
+        position: absolute;
+        /* top: 26.5px; */
+        right: -17.5px;
+        border: 0;
+        -webkit-transition: all 0.2s ease;
+        transition: all 0.2s ease;
+    }
+    .swymcs-wishlist-select-lists input:not(:checked) + label:after{
+        opacity: 0;
+        -webkit-transform: scale(0);
+        transform: scale(0);
+    }
+    .swymcs-wishlist-select-lists input:checked + label:after{
+        opacity: 1;
+        -webkit-transform: scale(1);
+        transform: scale(1);
+    }
+
+    #swymcs-wishlist-popup-buttons-container {
+        display: flex; margin-top: 22px;
+        padding: 0 50px; justify-content: space-between;
+    }
+
+    #swymcs-wishlist-popup-buttons-container .swymcs-button { width: auto; padding: 11px 32px; font-size: 14px }
+
+    #swymcs-wishlist-popup-buttons-container .swymcs-secondary-button{
+        border: 0.637151px solid;
+        font-weight: bold;
+        line-height: 16px;
+    }
+
+    #swymcs-wishlist-popup-buttons-container .swymcs-primary-button{ line-height: 14px }
+    .swymcs-create-list-error { margin-left: 45px }
+    #swymcs-modify-list-button:disabled { background-color: #c4c4c4; cursor: not-allowed; border: none }
+
+    .add-to-wl swym-collection-icon { display: flex; align-items: center }
+    swym-collection-icon button { display: none; }
+    sywm-collection-icon button.swym-custom-loaded { display: block !important; }
+
+    @media only screen and (max-width: 767px){
+        #swymcs-account-popup-body {
+            width: 100%;
+            max-width: 350px;
+            transform: translate(-50%, -25%);
+            top: 25%;
+            left: 50%;
+        }
+        #swymcs-products-grid li { width: 46%; margin: 0 4% 4% 0 }
+        #swymcs-lists-grid .swymcs-list-item{ width: 100%; margin: 0 0 5vw 0 }
+        .swymcs-add-to-cart-btn{
+            font-size: 11px; padding: 0 6%; height: 35px;
+        }
+        #swymcs-header-lists { left: 5%; max-height: 250px }
+        .swymcs-header-list-item {
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            &:first-child { padding-top: 1rem }
+            &:last-child { padding-bottom: 1rem }
+        }
+        #swymcs-wishlist-popup-container { width: 94%; padding: 32px 0; min-width: unset }
+        #swymcs-wishlist-popup-title { padding: 0 16px 24px }
+        #swymcs-wishlist-popup img { height: 25px; width: 25px }
+        .swymcs-wishlist-title { font-size: 14px }
+        #swymcs-wishlist-popup-title img { height: 35px; width: 35px }
+        #swymcs-wishlist-popup-product-title { font-size: 16px }
+        #swymcs-create-list-container, #swymcs-wishlist-lists, #swymcs-wishlist-popup-buttons-container { padding: 0 16px }
+        #swymcs-wishlist-popup-buttons-container { flex-direction: column-reverse }
+        #swymcs-wishlist-popup-buttons-container .swymcs-button { width: 100%; padding: 11px 32px; font-size: 14px }
+        span.swymcs-tooltip { display: none }
+    }
+</style>

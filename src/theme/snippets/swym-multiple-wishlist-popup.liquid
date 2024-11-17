@@ -1,0 +1,1014 @@
+<swym-wishlist-popup id="swymcs-wishlist-popup" class="swym-hide-container">
+    <div id="swymcs-wishlist-popup-container" class="swymcs-wishlist-popup-container swymcs-popup-body">
+        <div id="swymcs-account-popup-header">
+            <div id="swymcs-wishlist-popup-title" class="swymcs-popup-title swymcs-title swymcs-popup-title swymcs-buttons-container">
+                <img id="swymcs-wishlist-popup-product-image" src="https://source.unsplash.com/random" alt="Product Title"/>
+                <span id="swymcs-wishlist-popup-product-title">Product Title</span>
+            </div>
+            <button id="swymcs-close-wishlist-popup" class="swymcs-popup-close-button swymcs-button">
+                <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" role="presentation" class="icon icon-close" fill="none" viewBox="0 0 18 17" height="15px"><path d="M.865 15.978a.5.5 0 00.707.707l7.433-7.431 7.579 7.282a.501.501 0 00.846-.37.5.5 0 00-.153-.351L9.712 8.546l7.417-7.416a.5.5 0 10-.707-.708L8.991 7.853 1.413.573a.5.5 0 10-.693.72l7.563 7.268-7.418 7.417z" fill="#434655" stroke="#434655\" stroke-width="2"></path></svg>
+            </button>
+        </div>
+        <div id="swymcs-create-list-container" class="swym-hide-container swymcs-popup-text-field">
+            <div class="swymcs-create-list-field">
+                <span id="swymcs-create-list-image-text" class="swymcs-list-item-image-text">MW</span>
+                <input type="text" class="swymcs-popup-input" id="swymcs-create-list-field" placeholder="Saved Items"/>
+            </div>
+            <span class="swymcs-popup-error" id="swymcs-create-list-error"></span>
+        </div>
+        <ul id="swymcs-wishlist-lists"></ul>
+        <div id="swymcs-wishlist-popup-buttons-container" class="swymcs-buttons-container swymcs-popup-buttons-container">
+            <button id="swymcs-create-list-button" class="swymcs-button swymcs-secondary-button" aria-label="Create List">
+                Create List
+            </button>
+            <button id="swymcs-cancel-list-button" class="swym-hide-container swymcs-button swymcs-secondary-button" aria-label="Cancel">
+                Cancel
+            </button>
+            <button id="swymcs-save-new-list-button" class="swym-hide-container swymcs-button swymcs-primary-button" aria-label="Save New List">
+                Save & Add To List
+            </button>
+            <button id="swymcs-save-list-button" disabled class="swymcs-button swymcs-primary-button" aria-label="Add to List">
+                Add to List
+            </button>
+        </div>
+    </div>
+</swym-wishlist-popup>
+
+<script>
+    if(!customElements.get('swym-wishlist-popup')){
+        class SwymWishlistPopup extends HTMLElement{
+            constructor(){
+                super();
+                this._initializeSwymComponent();
+            }
+
+            _initializeSwymComponent(){
+                if (!window.SwymCallbacks) window.SwymCallbacks = [];
+                window.SwymCallbacks.push(this._init.bind(this));
+            }
+
+            _init(swat){
+                this._initializeSelectors();
+                this._attachEventListeners();
+            }
+
+            async _initializeSelectors(){
+                this.body = document.body;
+                this.popup = this;
+                this.closeBtn = this.querySelector('#swymcs-close-wishlist-popup');
+                this.popupTitle = this.querySelector("#swymcs-wishlist-popup-product-title");
+                this.popupImage = this.querySelector('#swymcs-wishlist-popup-product-image');
+                this.createListBtn = this.querySelector('#swymcs-create-list-button');
+                this.cancelCreateListBtn = this.querySelector('#swymcs-cancel-list-button');
+                this.saveNewListBtn = this.querySelector('#swymcs-save-new-list-button');
+                this.saveListBtn = this.querySelector('#swymcs-save-list-button');
+                this.listsContainer = this.querySelector('#swymcs-wishlist-lists');
+                this.createListContainer = this.querySelector('#swymcs-create-list-container');
+                this.createListTextField = this.querySelector('#swymcs-create-list-field');
+                this.createListError = this.querySelector('#swymcs-create-list-error');
+                this.createListImagetext = this.querySelector('#swymcs-create-list-image-text');
+                this.defaultListTilte = 'Saved List';
+                this.errorStrings = {
+                    "emptyString": "{{ 'List name required' }}",
+                    "shortString": "{{ 'Min. 3 characters required' }}",
+                    "listLimitString": "{{ 'List limit of 10 Wishlists reached, please delete a wishlist to create newer wishlists.' }}",
+                    "sameListString": "{{ ' already exists! Please enter a unique name.' }}"
+                };
+            }
+
+            _attachEventListeners(){
+                {% unless handle == 'swym-wishlist' %}
+                    this.body.addEventListener('click', this._overlayEvent.bind(this));
+                {% endunless %}
+                this.closeBtn.addEventListener('click', this._hide.bind(this));
+                this.createListBtn.addEventListener('click', this._showCreateList.bind(this));
+                this.cancelCreateListBtn.addEventListener('click', this._hideCreateList.bind(this));
+                this.saveListBtn.addEventListener('click', this._saveList.bind(this));
+                this.saveNewListBtn.addEventListener('click', this._validateForm.bind(this));
+                this.createListTextField.addEventListener('input', this._validateField.bind(this));
+                this.listsContainer.addEventListener('click', this._updateListHandler.bind(this));
+            }
+
+            {% unless handle == 'swym-wishlist' %}
+                _overlayEvent(evt){
+                    if(evt.target.classList.contains('no-scroll')) this._hide();
+                }
+            {% endunless %}
+
+            _show () {
+                this.popup.classList.add('swym-active-popup');
+                this.body.classList.add('no-scroll');
+                this._createHeader();
+                this._renderLists();
+                this._showContainer(this.popup)
+            }
+    
+            _hide () {
+                this.popup._hideContainer(this.popup);
+                this.popup._hideCreateList();
+                this.popup.classList.remove('swym-active-popup');
+                this.body.classList.remove('no-scroll');
+                this.listsContainer.innerHTML = '';
+                this.createListTextField.value = '';
+                this.createListError.textContent = '';
+            }
+    
+            _showContainer (selector) {
+                selector.classList.remove('swym-hide-container');
+            }
+    
+            _hideContainer (selector) {
+                selector.classList.add('swym-hide-container');
+            } 
+
+            _updateListHandler(evt = {target: { id: 'swymcs-no-action' }}){
+                if(evt.target.id == 'swymcs-wishlist-lists') return;
+                let listInputs = this.listsContainer.querySelectorAll('input[type="checkbox"]');
+                this.globalActionArray = [];
+                listInputs.forEach((input) => {
+                    if (!input.checked && input.classList.contains("variant-in-wishlist")) {
+                        this.globalActionArray.push({
+                            actionType: 'remove',
+                            listId: `${input.getAttribute("data-lid")}`
+                        });
+
+                    } else if (input.checked && !input.classList.contains("variant-in-wishlist")) {
+                        this.globalActionArray.push({
+                            actionType: 'add',
+                            listId: `${input.getAttribute("data-lid")}`
+                        });
+                    }
+                });
+                this._toggleWishlistButtonState();
+            }
+
+            _toggleWishlistButtonState(){
+                if (this.globalActionArray.length === 0) {
+                    this.saveListBtn.setAttribute("disabled", true);
+                    this.saveListBtn.textContent = 'Select Lists';
+                } else {
+                    const hasRemoveAction = this.globalActionArray.some((action) => action.actionType === 'remove');
+                    this.saveListBtn.removeAttribute("disabled");
+                    this.saveListBtn.textContent = hasRemoveAction ? 'Update Lists' : 'Add to Lists';
+                }
+            }
+
+            _showCreateList(){
+                this.createListTextField.placeholder = `${this.defaultListTilte} ${this.lists.length + 1}`;
+                this.createListTextField.focus();
+                // this.createListTextField.dispatchEvent(new CustomEvent('input'));
+                this._showContainer(this.createListContainer);
+                this._hideContainer(this.createListBtn);
+                this._showContainer(this.cancelCreateListBtn);
+                this._hideContainer(this.listsContainer);
+                this._hideContainer(this.saveListBtn);
+                this._showContainer(this.saveNewListBtn);
+            }
+
+            _hideCreateList(){
+                this._hideContainer(this.createListContainer);
+                this._hideContainer(this.cancelCreateListBtn);
+                this._showContainer(this.createListBtn);
+                this._showContainer(this.listsContainer);
+                this._showContainer(this.saveListBtn);
+                this._hideContainer(this.saveNewListBtn);
+            }
+
+            _createHeader () {
+                this.popupImage.src = window.currentActiveProduct?.featured_image || window.currentActiveVariant?.featured_image?.src; 
+                this.popupTitle.textContent = window.currentActiveProduct.title;
+            }
+
+            async _renderLists(){
+                this.lists = await this._getLists(); 
+                this.lists.length ? this._renderListsContainer() : this._showCreateList();
+            }
+
+            async _renderListsContainer(){
+                const product = window.currentActiveProduct;
+                this.lists = await this._getLists(); 
+                let html = ``;
+                const sortedLists = this.lists.sort((a,b) => b.uts - a.uts);
+                sortedLists.forEach((list, index) => {
+                    const imageHtml = list.listcontents.length ? `<img src="${list.listcontents[0].iu}" alt="${list.lname}">` : `<span class="swymcs-list-item-image-text">${list.lname[0]}</span>`;
+                    const isVariantInList = product.variants.some(variant => list.listcontents.some(item => item.epi === variant.id));
+                    const isChecked = isVariantInList ? 'checked' : '';
+                    html += `
+                        <li class="swymcs-wishlist-select-lists">
+                            <input type="checkbox" class="${isVariantInList ? 'variant-in-wishlist' : ''}" data-lid="${list.lid}" ${isChecked} id="swymcs-wishlist-checkbox--${list.lid}"/>
+                            <label class="swymcs-buttons-container swymcs-button swymcs-popup-button swymcs-buttons-container swymcs-select-list" for="swymcs-wishlist-checkbox--${list.lid}" aria-label="${list.lname}">
+                                ${imageHtml}
+                                <div class="swymcs-wishlist-title">${list.lname}</div>
+                            </label>
+                        </li>
+                    `;
+                });
+                this.listsContainer.innerHTML = html;
+                this.listsContainer.querySelectorAll('input[type="checkbox"]')[0].checked = true;
+                this._updateListHandler();
+            }
+
+            /**  LIST OPERATIONS **/
+
+            _getLists () {
+                return new Promise(async (resolve, reject) => {
+                    _swat.fetchLists({
+                      callbackFn: lists => resolve(lists),
+                      errorFn: err => reject(err)
+                    });
+                });
+            }
+
+            _saveNewList(){
+                 const listName = this.createListTextField.value.trim();
+                 const onSuccess = async (newList) => {
+                     this.lists = await this._getLists();
+                     this._renderListsContainer();
+                     this._hideCreateList();
+                 };
+                 const onError = error => _swat.ui.uiRef.showErrorNotification({ message: error.description });
+                 _swat.createList({"lname": listName }, onSuccess, onError);
+            }
+
+            _saveList(){
+                const product = {
+                    epi: window.currentActiveVariantId,
+                    empi: window.currentActiveProduct.id,
+                    du: window.currentActiveProduct.url
+                };
+                const { addToLids, removeFromLids } = this._separateListActions();
+                this._handleListsAction(product, addToLids, 'add');
+                this._handleListsAction(product, removeFromLids, 'remove').then(() => {
+                    setTimeout(function(){
+                        document.querySelectorAll('swym-collection-icon button').forEach(icon => icon.classList.remove('swym-added'));
+                        document.querySelector('swym-wishlist-popup')._hide();
+                    }, 500);
+                });
+            }
+
+            async _handleListsAction(product, lids, action){
+                const onSuccess = async (response) => {
+                    const lists = await this._getLists();
+                    if (!lists.length) return; 
+                    const listsData = lists.filter(list => lids.includes(list.lid));
+                    //if(action == 'add') this._prepareCustomSuccessNotification(lids.length)
+                }
+                const onError = error => _swat.ui.uiRef.showErrorNotification({message: error.description});
+                if(lids.length > 0){
+                    if(action == 'add')
+                        await _swat.addProductToLists(product, lids, onSuccess, onError);
+                    else 
+                       await _swat.removeProductFromLists(product, lids, onSuccess, onError);
+                }
+            }
+
+            _separateListActions() {
+                const addToLids = [];
+                const removeFromLids = [];
+                this.globalActionArray.forEach(listAction => {
+                    listAction.actionType === 'add' ? addToLids.push(listAction.listId) : removeFromLids.push(listAction.listId);
+                });
+                return { addToLids, removeFromLids };
+            }
+
+            /* LIST FORM OPERATIONS */
+
+            _validateForm(){
+                console.log('inside form validation');
+                const listStatus = this._validateField();
+                if(!listStatus) return;
+                this._createNewList();
+            }
+
+            _createNewList () {
+                let onSuccess = async (list) => {
+                    await this._renderListsContainer();
+                    this.saveListBtn.dispatchEvent(new CustomEvent('click'));
+                }
+                let onError = error => console.log("Error while creating a List", error);
+                _swat.createList({
+                    "lname": this.createListTextField.value.trim(), 
+                }, onSuccess, onError);
+            }
+
+            _prepareCustomSuccessNotification(listCount){
+                const [title, image] = [window.currentActiveProduct.title, window.currentActiveProduct?.featured_image ||  window.currentActiveVariant?.featured_image?.src];
+                const html = `
+                    <style>
+                        .swym-notification-success-inner .swym-image{ display: none !important }
+                        #swym-custom-notification-content { display: flex; gap: 10px; align-items: center; cursor: pointer }
+                        #swym-custom-notification-content #swym-custom-image-container { min-height: 50px; min-width: 50px; max-height: 50px; max-width: 50px }
+                        #swym-custom-notification-content #swym-custom-image-container #swym-custom-image { width: 100%; height: 100%; object-fit: cover; border-radius: 50% }
+                        #swym-custom-notification-content #swym-custom-title-container { font-weight: 500; font-size: 14px }
+                    </style>
+                    <div id="swym-custom-notification-content" onclick="_swat.ui.open()">
+                        <div id="swym-custom-image-container">
+                            <img id="swym-custom-image" src="${image}" alt="wishlisted product image"/>
+                        </div>
+                        <div id="swym-custom-title-conatainer"><strong>${title}</strong> has been added to <strong>${listCount} ${listCount == 1 ? 'list!' : 'lists!'}</strong></div>
+                    </div>
+                `;
+                _swat.ui.uiRef.showSuccessNotification({ message: `${html}` });
+            };
+
+            _validateField(evt){
+              console.log(this.lists.length, 'this.lists')
+                const listName = this.createListTextField.value.trim().toLowerCase();
+                let error = { 'status': false, 'type': '' }
+                listName.length < 3 && (error.status = true, error.type = 'isShortString');
+                listName =='' && (error.status = true, error.type = 'isBlank');
+                // this.lists.length > 10 && (error.status = true, error.type = 'isListsLimitString');
+                this.lists.find(list => list.lname.trim().toLowerCase() == listName) && (error.status = true, error.type = 'isSameListNameString');
+                this.createListImagetext.textContent = (error.status && error.type == 'isBlank') ? 'MW' : this.createListTextField.value.substr(0,2);
+                if(error.status){
+                    switch(error.type){
+                        case 'isBlank': {
+                            this.createListError.textContent = this.errorStrings.emptyString;
+                            break;
+                        }
+                        case 'isShortString': {
+                            this.createListError.textContent = this.errorStrings.shortString;
+                            break;
+                        }
+                        case 'isListsLimitString': {
+                            this.createListError.textContent = this.errorStrings.listLimitString;
+                            break;
+                        }
+                        case 'isSameListNameString': {
+                            this.createListImagetext.textContent = 
+                            this.createListError.textContent = `'${listName}'` + this.errorStrings.sameListString;
+                            break;
+                        }
+                    }
+                    return false;
+                } else this.createListError.textContent = '';  
+                return true;
+            }
+        }
+        customElements.define('swym-wishlist-popup', SwymWishlistPopup);
+    }
+</script>
+<style>
+body.no-scroll { overflow-y: hidden }
+body.no-scroll::after {
+    position: fixed; content: ''; width: 100vw; height: 100vh; inset: 0; background-color: #000; opacity: 0.4; z-index: 999999999;
+}
+.swym-active-popup {
+    z-index: 9999999999;
+}
+.main-page-title { margin-bottom: 0 }
+@media only screen and (min-width: 750px) {
+    .main-page-title { margin-bottom: 0 }
+}
+.swym-hide-container { display: none !important }
+
+.swymcs-button { 
+    border-radius: unset;
+    background: unset;
+    border: unset;
+    outline: unset;
+    cursor: pointer;
+    font-family: inherit; 
+    font-size: 16px; 
+    color: inherit;
+}
+
+.swymcs-buttons-container { display: flex; gap: 1rem; align-items: center }
+.swymcs-layout-vertical { flex-direction: column }
+.swymcs-primary-button, .swymcs-secondary-button { width: 100%; min-height: 35px }
+.swymcs-primary-button { color: #fff; background-color: #434655; font-weight: 600 }
+.swymcs-secondary-button { 
+    color: #434655; background-color: #fff; 
+    font-weight: 400 !important; font-family: inherit !important 
+} 
+
+/* WISHLIST PAGE HEADER  */
+.swymcs-wishlist-account {
+    display: flex;
+    justify-content: flex-end;
+    border-bottom: 1px solid #c4c4c4;
+    padding: 16px 0;
+    height: auto;
+    font-family: var(--font-body-family);
+}
+
+#swymcs-user-login-status-btn {
+    font-weight: 500;
+    font-size: 14px;
+    color: #434655;
+    display: flex; align-items: center; gap: 10px;
+}
+
+.swymcs-popup-body {
+    position: fixed; width: 400px;
+    top: 45%; left: 50%;
+    transform: translate(-50%, -45%);
+    background: #fff; height: auto; 
+    display: flex; flex-direction: column; 
+    gap: 1.5rem; z-index: 9999; 
+    padding: 32px 47px;
+}
+
+#swymcs-user-login-status-popup, #swymcs-additional-options-popup-container, #swymcs-wishlist-popup { position: relative }
+
+.swymcs-popup-title {
+    font-weight: 600;
+    font-family: inherit;
+    margin-block: 0;
+    font-size: 18px;
+    font-family: var(--font-heading-family);
+}
+
+.swymcs-popup-close-button {
+    font-size: 18px;
+    font-family: inherit;
+    font-weight: 600;
+    text-transform: lowercase;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.swymcs-popup-error { font-size: 14px; color: red; margin-block: 10px; font-style: italic }
+.swymcs-popup-input{
+    width: 100%;
+    background: #fff;
+    padding: 12px 10px;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 14px;
+    letter-spacing: .05em;
+    color: #434655;
+    border: 1px solid #434655;
+    font-family: var(--font-body-family);
+}
+
+.swymcs-popup-text-field { margin-bottom: 2rem }
+.swymcs-popup-label {
+    font-weight: 300;
+    font-size: 11px;
+    line-height: 13px;
+    color: #828282;
+    font-style: italic;
+}
+#swymcs-share-message-field { height: 75px; font-size: 12px; font-family: var(--font-body-family) }
+#swymcs-confirm-share-list-popup .swymcs-popup-text-field { margin-bottom: 0 }
+.swymcs-additional-popup-body { display: flex; flex-direction: column; gap: 1.5rem }
+.swymcs-confirm-share-subtitle { font-size: 16px; margin-bottom: -1rem }
+.swymcs-additional-share-buttons button { text-align: left; font-size: 13px; padding-inline: 0 }
+
+.swymcs-has-after-css { position: relative; display: flex; align-items: center; gap: .7rem }
+.swymcs-has-after-css::after{ position: absolute; width: 100%; height: 100%; z-index: 1; content: '' }
+.swymcs-share-buttons-icon { display: flex; align-items: center }
+
+.swymcs-popup-content { font-size: 14px; font-weight: 500; letter-spacing: 0.5; }
+/* #swymcs-account-popup-buttons-container button { border: 1px solid #434655; text-transform: uppercase } */
+.swymcs-popup-buttons-container button { border: 1px solid #434655; text-transform: uppercase }
+
+
+.swym-page-container, #swymcs-products-grid { min-height: 350px; color: #434655 }
+#swymcs-products-grid #swym-empty-wishlist-container { margin: 40px auto auto }
+
+/* EMPTY LIST CSS */
+#swym-empty-wishlist-container {
+    width: 100%;
+    max-width: 300px;
+    margin: auto;
+    text-align: center;
+    margin-top: 100px;
+}
+#swym-empty-wishlist-container-description{ margin-block: 1em}
+/* #swym-custom-continue-shopping{ color: #fff; background: #434655 } */
+#swym-empty-wishlist-container-title { font-weight: 600; font-size: 18px }
+
+#swym-custom-continue-shopping {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0 3rem;
+    cursor: pointer;
+    width: 100%;
+    border: none;
+    height: 45px;
+    border-radius: 15px;
+    text-decoration: none;
+}
+
+/* WISHLIST CONTAINER CSS */
+    #swymcs-products-grid-container{ display: flex; flex-direction: column }
+    
+    /* LIST HEADER CSS */
+
+    #swymcs-wishlist-header { 
+        display: flex; justify-content: space-between; align-items: center; 
+        border-bottom: 1px solid #c4c4c4; padding-block: 1.5rem;
+    }
+    #swymcs-active-list { cursor: pointer }
+    #swymcs-active-list-title-container { font-weight: 600; font-size: 17px }
+    #swymcs-active-list-image { height: 40px; width: 40px; object-fit: cover; border-radius: 50% }
+    #swymcs-additional-options-container { position: relative }
+    #swymcs-additional-options { 
+        right: 3rem;
+        top: -28px;
+    }
+    .swymcs-active-list-icon { display: flex; transform: rotate(-90deg) }
+    #swymcs-additional-options, #swymcs-header-lists {
+        position: absolute;
+        list-style: none;
+        width: max-content;
+        padding-inline: 0;
+    }
+    .swymcs-additional-option {
+        position: relative;
+        background: #fff;
+        &:first-child button { padding-top: 1rem }
+        &:last-child button{ padding-bottom: 1rem }
+    }
+    .swymcs-additional-option button {
+        font-family: inherit; 
+        padding: 0 2rem; 
+        width: 100%; height: 100%; text-align: left;
+        font-size: 14px; font-weight: 500; min-height: 40px; min-width: 150px;
+        &:after { 
+            content: ''; position: absolute; width: 100%; height: 100%; left: 0; top: 0; z-index: 1;
+        }
+        &:hover { text-decoration: underline }
+    }
+    #swymcs-delete-list { color: red }
+
+    #swymcs-lists-container { position: relative; margin-left: 2rem }
+    #swymcs-header-lists {
+        top: 75%;
+        left: 0;
+        max-height: 300px; 
+        overflow: auto;
+    }
+    .swymcs-header-list-item {
+        display: flex; align-items: center;
+        gap: 1.5rem; position: relative;
+        padding: 1rem 2rem; cursor: pointer;
+        min-width: 200px;
+        background-color: #fff;
+        &:first-child { padding-top: 2rem }
+        &:last-child { padding-bottom: 2rem }
+        &:hover { text-decoration: underline }
+    }
+    .swymcs-header-list-item::after { content: ''; z-index: 1; height: 100%; width: 100%; position: absolute; inset: 0 }
+
+    .swymcs-header-list-item img {
+        height: 35px; width: 35px; object-fit: cover;
+        border-radius: 50%;
+    }
+    .swymcs-list-item-image-text {
+        height: 35px;
+        width: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #434655;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    #swymcs-back-to-lists-view {
+        display: flex; align-items: center; 
+        justify-content: space-between; gap: 0.5rem;
+        min-height: 40px; 
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    #swymcs-back-button-container {
+        margin-block: 1.5rem;
+    }
+
+    /* LISTS GRID  */
+
+    #swymcs-lists-grid {
+        padding: 60px 0 45px;
+    }
+
+    #swymcs-lists-grid, .swymcs-secondary-images {
+        display: flex; flex-wrap: wrap;
+    }
+
+    #swymcs-lists-grid .swymcs-list-item {
+        width: 31.33%;
+        margin: 0 2% 2% 0;
+        max-width: 430px;
+        min-height: 335px;
+        align-items: stretch;
+        padding-bottom: 20px;
+        border-radius: 20px;
+    }
+    .swymcs-list-title-container { padding: 24px 12px 12px }
+    .swymcs-list-title {
+        font-family: var(--font-heading-family);
+        color: rgb(var(--color-foreground));
+        font-weight: 400;
+        font-size: 18px;
+        line-height: 20px;
+        text-transform: capitalize;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        margin-right: 5px;
+    }
+
+    .swymcs-list-product-count-container{
+        padding-inline: 12px;
+        font-family: var(--font-body-family);
+        color: #828282;
+        font-weight: 300;
+        font-size: 12px;
+        line-height: 14px;
+        letter-spacing: .05em;
+        margin-bottom: 10px;
+    }
+    .swymcs-list-image-container {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 12px;
+        flex-grow: 1;
+    }
+    .swymcs-wishlist-image-wrapper{
+        width: 33.333%;
+        margin-right: 0;
+        padding: 2px;
+        overflow: clip;
+    }
+    .swymcs-wishlist-image-wrapper:first-child {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 5px;
+        height: 200px;
+    }
+    .swymcs-wishlist-image-wrapper:not(:first-child) {
+        height: auto; display: flex;
+        max-height: 125px; position: relative;
+    }
+    .swymcs-wishlist-image-wrapper .swymcs-empty-image-container { height: 100px }
+    .swymcs-wishlist-image-wrapper .swymcs-empty-image-container::after {
+        height: calc(100% - 4px); width: calc(100% - 4px); 
+        content:''; border: 1px solid #c4c4c4; 
+        position: absolute; top: 2px; left: 2px;
+    }
+    .swymcs-list-image-container img { width: 100%; height: 100%; object-fit: cover }
+    .swymcs-major-button {
+        font-family: var(--font-heading-family);
+        text-transform: capitalize;
+        border-radius: 42px;
+        transition: color .2s;
+        padding: 10px 20px;
+        color: #fff;
+        font-size: 1.5rem;
+        letter-spacing: .1rem;
+        line-height: calc(1 + .2 / var(--font-body-scale));
+        background-color: rgba(var(--color-button),var(--alpha-button-background));
+        font-weight: 300;
+        align-self: center;
+
+    }
+
+    .swymcs-no-products-message {
+        flex: 1;
+        height: 100px;
+        min-height: 50px;
+        font-family: var(--font-body-family);
+        color: #828282;
+        font-weight: 300;
+        font-size: 12px;
+        line-height: 14px;
+        display: flex;
+        align-items: center;
+        text-align: center;
+        letter-spacing: .1em;
+        height: 160px;
+        justify-content: center;
+        align-self: center;
+        margin-top: 30px;
+    }
+
+    /* PRODUCTS GRID */
+    #swymcs-products-grid { 
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: left; 
+        width: 100%;
+        padding-left: 0;
+    }
+    #swymcs-products-grid li {
+        list-style: none;
+        width: 22%;
+        margin: 0 3% 4% 0;
+        position: relative;
+    }
+
+    .swymcs-wishlist-grid-item {
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        cursor: pointer;
+        justify-content: space-between;
+        text-align: left;
+        box-shadow: none;
+    }
+    .swymcs-wishlist-grid-item.swymcs-dragging {
+        opacity: .5; transform: scale(0.9); 
+    }
+
+    #swymcs-products-grid li .swymcs-wishlist-item {
+        width: 100%;
+        margin: 0 1.5% 2% 0;
+        padding: 15px;
+        position: relative;
+    }
+
+    .swymcs-list-product .swymcs-product-delete-btn{
+        width: 28px;
+        height: 28px;
+        right: 15px;
+        top: 16px;
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+    }
+    .swymcs-list-product .swymcs-product-delete-btn::after{ 
+        content: ''; height: 100%; width: 100%; position: absolute; z-index: 2;
+    }
+
+    .swymcs-product-link { padding-inline: 0 }
+
+    .swymcs-wishlist-product-image-wrapper{
+        height: auto;
+        cursor: grab;
+    }
+    .swymcs-wishlist-grid-item-container.swymcs-dragging .swymcs-wishlist-product-image-wrapper{ cursor: grabbing }
+    .swymcs-wishlist-image { width: 100%; height: 100%; object-fit: cover }
+    .swymcs-product-title {
+        font-family: var(--font-heading-family);
+        font-size: 13px;
+        line-height: 16px;
+        color: #202020;
+        margin-left: 0;
+        font-weight: 400;
+        text-align: left;
+        margin: 12px 15px 6px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-left: 0;
+    }
+
+    #swymcs-products-grid .swymcs-product-link:after {
+        content: '';
+        position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+    }
+    .swymcs-product-price {
+        font-family: var(--font-body-family);
+        font-weight: 300;
+        font-size: 11px;
+        line-height: 13px;
+        color: #828282;
+        padding: 0 15px 13px;
+        padding-left: 0;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .swymcs-product-note { 
+        position: relative;
+        z-index: 2;
+        width: 100%;
+        background: #fff;
+        padding: 5px 5px;
+        font-weight: 300;
+        font-size: 11px;
+        line-height: 13px;
+        color: #828282;
+        border: 1px solid #c4c4c4;
+        font-style: italic;
+        outline: none;
+        margin-bottom: 15px;
+        height: 50px;
+        resize: none;
+    }
+
+    .swymcs-product-buttons {display: flex; justify-content: space-between; align-items: center }
+    .swymcs-add-to-cart-btn { 
+        position: relative; 
+        z-index: 2;
+        height: 40px;
+        display: block;
+        color: #fff;
+        padding: 0 10%;
+        font-family: inherit !important;
+        font-size: 12px; font-weight: 700;
+    }
+    .swymcs-sold-out { cursor: not-allowed; opacity: .6 }
+    .swymcs-sample-product { position: relative }
+    .swymcs-sample-product::after{
+        content: '+';
+        position: absolute;
+        top: 44%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 20px;
+        font-weight: 500;
+    }
+    .swymcs-sample-product::before{
+        position: absolute; inset: 0; width: 100%; height: 100%; z-index: 2; content: '';
+    }
+
+    .swymcs-sample-product:hover span.swymcs-tooltip{ opacity: 1; visibility: visible }
+
+    span.swymcs-tooltip {
+        transform: translateX(-50%);
+        right: auto;
+        white-space: nowrap;
+        position: absolute;
+        top: -40px;
+        left: 0;
+        opacity: 0;
+        visibility: hidden;
+        z-index: 9;
+        padding: 7px 0px 8px;
+        box-shadow: 0px 4px 16px rgba(118, 118, 118, 0.42);
+        border-radius: 20px;
+        font-family: 'Gilmer Bold';
+        font-style: normal;
+        font-size: 13px;
+        line-height: 16px;
+        background: #fff;
+        color: #3A3B3C;
+        text-align: center;
+        width: auto !important;
+        padding-inline: 10px !important;
+        border: .5px solid #c4c4c4;
+    }
+
+    /* SWYM WISHLIST POPUP */
+    #swymcs-wishlist-popup-container { min-width: 500px; max-width: 600px; padding: 50px 0; max-height: 96% }
+    #swymcs-wishlist-popup-title {
+        display: flex;
+        padding: 0 50px 24px;
+        position: relative;
+        box-sizing: border-box;
+    }
+    #swymcs-wishlist-popup-product-title { text-overflow: ellipsis; overflow: hidden; white-space: nowrap }
+    #swymcs-wishlist-popup-title #swymcs-wishlist-popup-product-title::after {
+        content: " ";
+        width: calc( 100% - 100px);
+        position: absolute;
+        bottom: 0;
+        height: 2px;
+        background: #c4c4c4;
+        left: 50px;
+    }
+    #swymcs-create-list-container, #swymcs-wishlist-lists, #swymcs-account-popup-buttons-container {
+        overflow: auto;
+        padding: 0 50px;
+    }
+    #swymcs-wishlist-popup img {
+        height: 35px;
+        width: 35px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    #swymcs-wishlist-popup-title img {
+        height: 45px;
+        width: 45px;
+    }
+    #swymcs-wishlist-lists { list-style: none }
+    .swymcs-wishlist-select-lists label { width: 100% }
+    .swymcs-wishlist-select-lists {
+        padding: 15px 30px 15px 0;
+        display: flex;
+        border-bottom: 1px solid #cacbcf;
+        align-items: center;
+        position: relative;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 14px;
+        letter-spacing: .05em;
+        border-radius: 42px;
+    }
+    .swymcs-wishlist-select-lists input { position: absolute; right: 0 }
+    .swymcs-create-list-field {
+        padding: 15px 30px 15px 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .swymcs-create-list-field .swymcs-list-item-image-text{ min-width: 35px }
+        /* CUSTOM CHECKBOX CSS */
+        .swymcs-wishlist-select-lists input{ position: absolute; left: 9999px }
+        .swymcs-wishlist-select-lists input + label{
+            position: relative;
+            padding-left: 15px;
+            cursor: pointer;
+        }
+        .swymcs-wishlist-select-lists input + label:before{
+            content: '';
+            position: absolute;
+            right: -20px;
+            
+            width: 15px;
+            height: 15px;
+            border: 0.5px solid #434655;
+            background: #FFF;
+            -webkit-border-radius: 2px;
+            -moz-border-radius: 2px;
+            border-radius: 2px;
+        }
+        .swymcs-wishlist-select-lists input + label:after{
+            content: '';
+            background: #1e1e1e;
+            height: 10px;
+            width: 10px;
+            position: absolute;
+            /* top: 26.5px; */
+            right: -17.5px;
+            border: 0;
+            -webkit-transition: all 0.2s ease;
+            transition: all 0.2s ease;
+        }
+        .swymcs-wishlist-select-lists input:not(:checked) + label:after{
+            opacity: 0;
+            -webkit-transform: scale(0);
+            transform: scale(0);
+        }
+        .swymcs-wishlist-select-lists input:checked + label:after
+        {
+            opacity: 1;
+            -webkit-transform: scale(1);
+            transform: scale(1);
+        }
+
+        #swymcs-wishlist-popup-buttons-container {
+            display: flex; margin-top: 22px;
+            padding: 0 50px; justify-content: space-between;
+        }
+
+        #swymcs-wishlist-popup-buttons-container .swymcs-button { width: auto; padding: 11px 32px; font-size: 14px }
+
+        #swymcs-wishlist-popup-buttons-container .swymcs-secondary-button{
+            border: 0.637151px solid;
+            font-weight: bold;
+            line-height: 16px;
+        }
+
+        #swymcs-wishlist-popup-buttons-container .swymcs-primary-button{ line-height: 14px }
+        .swymcs-create-list-error { margin-left: 45px }
+        #swymcs-save-list-button:disabled { background-color: #c4c4c4; cursor: not-allowed; border: none }
+
+        .add-to-wl swym-collection-icon { display: flex; align-items: center }
+        swym-collection-icon button { display: none; }
+        sywm-collection-icon button.swym-custom-loaded { display: block !important; }
+
+    @media only screen and (max-width: 767px){
+        #swymcs-account-popup-body {
+            width: 100%;
+            max-width: 350px;
+            transform: translate(-50%, -25%);
+            top: 25%;
+            left: 50%;
+        }
+        #swymcs-products-grid li { width: 46%; margin: 0 4% 4% 0 }
+        #swymcs-lists-grid .swymcs-list-item{ width: 100%; margin: 0 0 5vw 0 }
+        .swymcs-add-to-cart-btn{
+            font-size: 11px; padding: 0 6%; height: 35px;
+        }
+        #swymcs-header-lists { left: 5%; max-height: 250px }
+        .swymcs-header-list-item {
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            &:first-child { padding-top: 1rem }
+            &:last-child { padding-bottom: 1rem }
+        }
+        #swymcs-wishlist-popup-container { width: 94%; padding: 32px 0; min-width: unset }
+        #swymcs-wishlist-popup-title { padding: 0 16px 24px }
+        #swymcs-wishlist-popup img { height: 25px; width: 25px }
+        .swymcs-wishlist-title { font-size: 14px }
+        #swymcs-wishlist-popup-title img { height: 35px; width: 35px }
+        #swymcs-wishlist-popup-product-title { font-size: 16px }
+        #swymcs-create-list-container, #swymcs-wishlist-lists, #swymcs-wishlist-popup-buttons-container { padding: 0 16px }
+        #swymcs-wishlist-popup-buttons-container { flex-direction: column-reverse }
+        #swymcs-wishlist-popup-buttons-container .swymcs-button { width: 100%; padding: 11px 32px; font-size: 14px }
+        span.swymcs-tooltip { display: none }
+    }
+
+    @media only screen and (max-width: 350px){
+        #swymcs-products-grid li { width: 100%; margin: 0 }
+        #swymcs-lists-container { margin-left: 0 }
+        #swymcs-active-list-title-container { font-size: 15px }
+        #swymcs-active-list-image { width: 30px; height: 30px; }
+        .swymcs-header-list-item img { width: 25px; height: 25px }
+        #swymcs-header-lists .swym-list-item { font-size: 13px }
+    }
+</style>

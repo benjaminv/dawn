@@ -1,0 +1,171 @@
+<swymcs-wishlist-button class="swymcs-wishlist-button" {{ block.shopify_attributes }}>
+  <Button
+    id="swymcs-wishlist-button"
+    class="swymcs-wishlist-button swymcs-wishlist-button-{{ product.id }}"
+    data-empi="{{ product.id }}"
+    data-epi="{%- if product.selected_variant -%}{{ product.selected_variant.id}}{%- else -%}{{ product.variants[0].id }}{%- endif -%}"
+    data-du="{{ shop.url }}{{ product.url }}"
+    data-settings="{{ block.settings | json | escape }}"
+  >
+    <div id="swymUnfilled">
+      {%- if block.settings.swym_wishlist_button_type == 'icon'
+        or block.settings.swym_wishlist_button_type == 'icontext'
+      -%}
+        <svg
+          fill="currentColor"
+          id="swym-heart-svg-icon"
+          height="100%"
+          viewBox="0 0 64 64"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xml:space="preserve"
+          xmlns:serif="http://www.serif.com/"
+          style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"
+        >
+          <rect id="Icons" x="-64" y="-256" width="1280" height="800" style="fill:none;"/><g id="Icons1" serif:id="Icons"><g id="Strike"></g><g id="H1"></g><g id="H2"></g><g id="H3"></g><g id="list-ul"></g><g id="hamburger-1"></g><g id="hamburger-2"></g><g id="list-ol"></g><g id="list-task"></g><g id="trash"></g><g id="vertical-menu"></g><g id="horizontal-menu"></g><g id="sidebar-2"></g><g id="Pen"></g><g id="Pen1" serif:id="Pen"></g><g id="clock"></g><g id="external-link"></g><g id="hr"></g><g id="info"></g><g id="warning"></g><g id="plus-circle"></g><g id="minus-circle"></g><g id="vue"></g><g id="cog"></g><g id="logo"></g><path d="M43.046,9.05c5.137,0.117 9.856,3.451 11.782,8.485c2.392,6.249 0.678,13.452 -2.495,19.624c-3.792,7.375 -10.79,12.703 -17.966,17.288c0,0 -2.796,1.351 -5.516,-0.403c-9.246,-6.021 -17.877,-13.963 -20.318,-24.82c-1.857,-8.258 1.161,-18.596 10.582,-20.034c4.72,-0.721 11.109,2.766 12.808,5.869c1.657,-3.095 6.565,-5.884 10.694,-6.008c0.215,-0.002 0.214,-0.003 0.429,-0.001Z" style="fill-rule:nonzero;"/><g id="radio-check"></g><g id="eye-slash"></g><g id="eye"></g><g id="toggle-off"></g><g id="shredder"></g><g id="spinner--loading--dots-" serif:id="spinner [loading, dots]"></g><g id="react"></g><g id="check-selected"></g><g id="turn-off"></g><g id="code-block"></g><g id="user"></g><g id="coffee-bean"></g><g id="coffee-beans"><g id="coffee-bean1" serif:id="coffee-bean"></g></g><g id="coffee-bean-filled"></g><g id="coffee-beans-filled"><g id="coffee-bean2" serif:id="coffee-bean"></g></g><g id="clipboard"></g><g id="clipboard-paste"></g><g id="clipboard-copy"></g><g id="Layer1"></g></g>
+        </svg>
+      {%- elsif block.settings.swym_wishlist_button_type == 'customicon'
+        or block.settings.swym_wishlist_button_type == 'customicontext'
+      -%}
+        <img
+          src="{{ block.settings.swym_wishlist_button_add_to_wishlist_icon | img_url: '20x20' }}"
+          width="auto"
+          height="100%"
+        >
+      {%- endif -%}
+      {%- if block.settings.swym_wishlist_button_type == 'icontext'
+        or block.settings.swym_wishlist_button_type == 'customicontext'
+        or block.settings.swym_wishlist_button_type == 'button'
+      -%}
+        <span class="swym-button-content">{{ block.settings.add_to_wishlist_label }}</span>
+      {%- endif -%}
+    </div>
+    <div id="swymFilled" style="display:none">
+      {%- if block.settings.swym_wishlist_button_type == 'icon'
+        or block.settings.swym_wishlist_button_type == 'icontext'
+      -%}
+        <svg
+          fill="currentColor"
+          id="swym-heart-svg-icon"
+          height="100%"
+          viewBox="0 0 64 64"
+          version="1.1"
+          xmlns="http://www.w3.org/2000/svg"
+          xmlns:xlink="http://www.w3.org/1999/xlink"
+          xml:space="preserve"
+          xmlns:serif="http://www.serif.com/"
+          style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;"
+        >
+          <rect id="Icons" x="-64" y="-256" width="1280" height="800" style="fill:none;"/><g id="Icons1" serif:id="Icons"><g id="Strike"></g><g id="H1"></g><g id="H2"></g><g id="H3"></g><g id="list-ul"></g><g id="hamburger-1"></g><g id="hamburger-2"></g><g id="list-ol"></g><g id="list-task"></g><g id="trash"></g><g id="vertical-menu"></g><g id="horizontal-menu"></g><g id="sidebar-2"></g><g id="Pen"></g><g id="Pen1" serif:id="Pen"></g><g id="clock"></g><g id="external-link"></g><g id="hr"></g><g id="info"></g><g id="warning"></g><g id="plus-circle"></g><g id="minus-circle"></g><g id="vue"></g><g id="cog"></g><g id="logo"></g><path d="M43.046,9.05c5.137,0.117 9.856,3.451 11.782,8.485c2.392,6.249 0.678,13.452 -2.495,19.624c-3.792,7.375 -10.79,12.703 -17.966,17.288c0,0 -2.796,1.351 -5.516,-0.403c-9.246,-6.021 -17.877,-13.963 -20.318,-24.82c-1.857,-8.258 1.161,-18.596 10.582,-20.034c4.72,-0.721 11.109,2.766 12.808,5.869c1.657,-3.095 6.565,-5.884 10.694,-6.008c0.215,-0.002 0.214,-0.003 0.429,-0.001Z" style="fill-rule:nonzero;"/><g id="radio-check"></g><g id="eye-slash"></g><g id="eye"></g><g id="toggle-off"></g><g id="shredder"></g><g id="spinner--loading--dots-" serif:id="spinner [loading, dots]"></g><g id="react"></g><g id="check-selected"></g><g id="turn-off"></g><g id="code-block"></g><g id="user"></g><g id="coffee-bean"></g><g id="coffee-beans"><g id="coffee-bean1" serif:id="coffee-bean"></g></g><g id="coffee-bean-filled"></g><g id="coffee-beans-filled"><g id="coffee-bean2" serif:id="coffee-bean"></g></g><g id="clipboard"></g><g id="clipboard-paste"></g><g id="clipboard-copy"></g><g id="Layer1"></g></g>
+        </svg>
+      {%- elsif block.settings.swym_wishlist_button_type == 'customicon'
+        or block.settings.swym_wishlist_button_type == 'customicontext'
+      -%}
+        <img
+          src="{{ block.settings.swym_wishlist_button_added_to_wishlist_icon | img_url: '20x20' }}"
+          width="auto"
+          height="100%"
+        >
+      {%- endif -%}
+      {%- if block.settings.swym_wishlist_button_type == 'icontext'
+        or block.settings.swym_wishlist_button_type == 'customicontext'
+        or block.settings.swym_wishlist_button_type == 'button'
+      -%}
+        <span class="swym-button-content">{{ block.settings.added_to_wishlist_label }}</span>
+      {%- endif -%}
+    </div>
+  </Button>
+</swymcs-wishlist-button>
+
+<script>
+    if(!customElements.get('swymcs-wishlist-button')){
+      class SwymWishlistButton extends HTMLElement{
+        constructor(){
+          super();
+          if(!window.SwymCallbacks){
+            window.SwymCallbacks = [];
+           }
+           window.SwymCallbacks.push(this.initializeSwymButton.bind(this));
+        }
+
+        async initializeSwymButton(swat){
+          var swymWishlistButtonElement = this;
+          this.elements = {
+            wishlistButton: swymWishlistButtonElement.querySelector('button'),
+            unfilledState: swymWishlistButtonElement.querySelector('#swymUnfilled'),
+            filledState: swymWishlistButtonElement.querySelector('#swymFilled'),
+          }
+
+
+          this.elements.wishlistButton.addEventListener('click',()=>{
+            let { epi, empi, du } = this.elements.wishlistButton.dataset;
+            let product = { epi, empi, du };
+            if(swat.isCollectionsEnabled()){
+              swymcsWishlistFunctions.renderPopup(product);
+            }else{
+              if(this.elements.wishlistButton.classList.contains('swym-added-custom')){
+                swymcsWishlistFunctions.removeFromWishlist(swat, product);
+              }else{
+                 swymcsWishlistFunctions.addToWishlist(swat, product); 
+              } 
+            }
+          });
+          
+        }
+      }
+      customElements.define('swymcs-wishlist-button', SwymWishlistButton);
+  }
+</script>
+
+<style>
+
+.swymcs-wishlist-button{
+   #swymcs-wishlist-button{
+      width: {{block.settings.swymcs_button_width}};
+      height: 40px;
+      padding: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      {%- if block.settings.disable_added_to_wishlist == false -%}
+        opacity: 1 !important;
+      {%- endif -%}
+
+     {%- if block.settings.swymcs_button_type == 'solid' -%}
+        color: {{block.settings.add_to_wishlist_color}} !important;
+        background: {{block.settings.swymcs_button_background_color}} !important;
+        border: unset;
+      {%- elsif block.settings.swymcs_button_type == 'outline'  -%}
+        color: {{block.settings.swymcs_button_background_color}};
+        background: unset;
+        border: 1.5px solid {{block.settings.swymcs_button_background_color}};
+      {%- endif -%}
+
+       display: flex;
+       justify-content: {{block.settings.swymcs_button_align}};
+     #swym-heart-svg-icon{
+        stroke: {{ block.settings.added_to_wishlist_color }};
+        stroke-width: 2px;
+      }
+
+       &.disabled{
+         cursor: default;
+      }
+    }
+  
+    #swymcs-wishlist-button.swym-added-custom{
+      color: {{block.settings.added_to_wishlist_color}} !important;
+    }
+    #swymFilled, #swymUnfilled{
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      .swym-button-content{
+        margin-left: 10px;
+      }
+    }
+
+    {{block.settings.swym_wishlist_button_custom_css}}
+}
+</style>

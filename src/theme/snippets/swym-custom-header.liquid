@@ -1,0 +1,75 @@
+<swym-header-icon>
+    <button id="swym-header-icon" aria-label="View Wishlist">
+        {{ settings.swym_header_icon }}
+        <span class="swym-wishlist-header-counter"></span>
+    </button>
+</swym-header-icon>
+
+<style>
+    .swym-wishlist.swym-inject.header__icon { display: none }
+  
+    swym-header-icon #swym-header-icon {
+        border: none; 
+        width: auto; 
+        height: 35px; 
+        background: transparent; 
+        display: flex; 
+        align-items: end; 
+        /* Update the color as per store requirements from the customisation settings */
+        color: {{ settings.swym_header_icon_color }}; 
+    }
+</style>
+
+<script>
+  if(!customElements.get('swym-header-icon')){
+    class SwymHeaderIcon extends HTMLElement{
+        constructor(){
+          super();
+          if (!window.SwymCallbacks) window.SwymCallbacks = [];
+          window.SwymCallbacks.push(this._initializeSwymButton.bind(this));
+        }
+
+        async _initializeSwymButton(swat){
+          this.button = this.querySelector('button');
+          this.button.addEventListener('click', _openWishlistUi);
+
+          function _openWishlistUi(evt){
+            swat.ui.open();
+          }
+          
+          // HEADER COUNTER CODE 
+
+          this.counter = this.querySelector(".swym-wishlist-header-counter");
+          
+          if(this.counter){
+          
+            // Fetch the lists 
+          
+            async function getListsData(){
+              return new Promise(async (resolve, reject) => {
+                swat.fetchLists({
+                  callbackFn: data => resolve(data), 
+                  onError: error => reject(error)
+                })
+              })
+            }
+            const listData = await getListsData();
+            
+            // Remove the duplicate occurences of products
+            
+            let products = {};
+            for (const list of listData) {
+              for (const product of list.listcontents) {
+                  const epi = product.epi;
+                  if (!products[epi]) {
+                    products[epi] = product;
+                  }
+                }
+              }
+              this.counter.innerHTML = Object.values(products).length;
+            }
+        }
+    }
+    customElements.define('swym-header-icon', SwymHeaderIcon);
+  }
+</script>
