@@ -101,7 +101,7 @@
           this.elements.wishlistButton.addEventListener('click',()=>{
             let { epi, empi, du } = this.elements.wishlistButton.dataset;
             let product = { epi, empi, du };
-            if(swat.isCollectionsEnabled()){
+            if(swat.isCollectionsEnabled() || true){
               swymcsWishlistFunctions.renderPopup(product);
             }else{
               if(this.elements.wishlistButton.classList.contains('swym-added-custom')){

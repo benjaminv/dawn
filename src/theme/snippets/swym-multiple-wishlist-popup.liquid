@@ -1,9 +1,11 @@
 <swym-wishlist-popup id="swymcs-wishlist-popup" class="swym-hide-container">
+    {% assign product_image = product.featured_image | image_url: width: 100 %}
+    {% assign product_title = product.title %}
     <div id="swymcs-wishlist-popup-container" class="swymcs-wishlist-popup-container swymcs-popup-body">
         <div id="swymcs-account-popup-header">
             <div id="swymcs-wishlist-popup-title" class="swymcs-popup-title swymcs-title swymcs-popup-title swymcs-buttons-container">
-                <img id="swymcs-wishlist-popup-product-image" src="https://source.unsplash.com/random" alt="Product Title"/>
-                <span id="swymcs-wishlist-popup-product-title">Product Title</span>
+                <img id="swymcs-wishlist-popup-product-image" src="{{ product_image }}" alt="{{ product_title }}"/>
+                <span id="swymcs-wishlist-popup-product-title">{{ product_title }}</span>
             </div>
             <button id="swymcs-close-wishlist-popup" class="swymcs-popup-close-button swymcs-button">
                 <svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" role="presentation" class="icon icon-close" fill="none" viewBox="0 0 18 17" height="15px"><path d="M.865 15.978a.5.5 0 00.707.707l7.433-7.431 7.579 7.282a.501.501 0 00.846-.37.5.5 0 00-.153-.351L9.712 8.546l7.417-7.416a.5.5 0 10-.707-.708L8.991 7.853 1.413.573a.5.5 0 10-.693.72l7.563 7.268-7.418 7.417z" fill="#434655" stroke="#434655\" stroke-width="2"></path></svg>
@@ -40,6 +42,7 @@
             constructor(){
                 super();
                 this._initializeSwymComponent();
+                this.lists = window.swymWishLists || [];
             }
 
             _initializeSwymComponent(){
@@ -223,6 +226,7 @@
                  const listName = this.createListTextField.value.trim();
                  const onSuccess = async (newList) => {
                      this.lists = await this._getLists();
+                     console.log('lists', this.lists);
                      this._renderListsContainer();
                      this._hideCreateList();
                  };

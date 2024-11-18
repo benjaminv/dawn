@@ -65,7 +65,7 @@
     
           const selectedList = lists.find(({ lid }) => lid === currentListId) || lists[0];
     
-          if (swat.isCollectionsEnabled()) 
+          if (swat.isCollectionsEnabled() || true) 
             renderMultipleListOptions(lists);
     
           renderList(selectedList.listcontents);
