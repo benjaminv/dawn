@@ -1,7 +1,8 @@
 <swym-header-icon>
     <button id="swym-header-icon" aria-label="View Wishlist">
         {{ settings.swym_header_icon }}
-        <span class="swym-wishlist-header-counter"></span>
+        {% comment %} <span class="swym-wishlist-header-counter"></span> |  {% endcomment %}
+        <span x-cloak="" x-show="$store.main.productsWishlised.length > 0" x-text="$store.main.productsWishlised.length"></span>
     </button>
 </swym-header-icon>
 

@@ -1,9 +1,21 @@
 /* Initializes the wishlist functions by fetching the list and adding event listeners. */
 
-const init = (swat) => {
-  let lists = fetchList(swat);
-  if(!window.swymSelectedListId){
-     createList(swat);
+const init = async (swat) => {
+  let lists = await fetchList(swat);
+  Alpine.store('main').wishlists = lists;
+
+  let products = {};
+  for (const list of lists) {
+    for (const product of list.listcontents) {
+      const epi = product.epi;
+      if (!products[epi]) {
+        products[epi] = product;
+      }
+    }
+  }
+  Alpine.store('main').productsWishlised = Object.values(products);
+  if (!window.swymSelectedListId) {
+    createList(swat);
   }
   addSwymEventListener(swat);
 };
@@ -11,26 +23,26 @@ const init = (swat) => {
 /* Create a new wishlist if it doesn't already exist. */
 
 const createList = (swat) => {
-    let listConfig = { "lname": "My Wishlist" };
-  
-    let onSuccess = function({lid}) { 
-      console.log("Successfully created a new List", lid);
-      window.swymSelectedListId = lid;
-    }
-    
-    let onError = function(error) {
-      console.log("Error while creating a List", error);
-    }
-    
-    swat.createList(listConfig, onSuccess, onError);
-}
+  let listConfig = { lname: 'My Wishlist' };
+
+  let onSuccess = function ({ lid }) {
+    console.log('Successfully created a new List', lid);
+    window.swymSelectedListId = lid;
+  };
+
+  let onError = function (error) {
+    console.log('Error while creating a List', error);
+  };
+
+  swat.createList(listConfig, onSuccess, onError);
+};
 
 /* Fetches the wishlist data. */
 
 const fetchList = async (swat) => {
   return new Promise((resolve, reject) => {
     const onSuccess = (lists) => {
-      console.log("Fetched all Lists", lists);
+      console.log('Fetched all Lists', lists);
       window.swymWishLists = lists;
       window.swymSelectedListId = lists && lists[0] && lists[0].lid;
       resolve(lists);
@@ -38,14 +50,14 @@ const fetchList = async (swat) => {
     };
 
     const onError = (error) => {
-      console.log("Error while fetching all Lists", error);
+      console.log('Error while fetching all Lists', error);
       reject(error);
     };
 
     if (!window.swymWishLists) {
       swat.fetchLists({
         callbackFn: onSuccess,
-        errorFn: onError
+        errorFn: onError,
       });
     } else {
       resolve(window.swymWishLists);
@@ -56,18 +68,18 @@ const fetchList = async (swat) => {
 /* Create a new wishlist if not already exist. */
 
 // const createList = (swat) => {
-  
+
 //     let listConfig = { "lname": "My Wishlist" };
-    
-//     let onSuccess = function({lid}) { 
+
+//     let onSuccess = function({lid}) {
 //       console.log("Successfully created a new List", lid);
 //       window.swymSelectedListId = lid;
 //     }
-    
+
 //     let onError = function(error) {
 //       console.log("Error while creating a List", error);
 //     }
-    
+
 //     swat.createList(listConfig, onSuccess, onError);
 // }
 
@@ -76,44 +88,51 @@ const fetchList = async (swat) => {
 const refreshList = async (swat) => {
   window.swymWishLists = null;
   await fetchList(swat);
+  await init(swat);
 };
 
 /* Adds product to wishlist action. */
 
 const addToWishlist = (swat, product) => {
-    let onSuccess = async function (addedListItem){
-      console.log('Product has been added to wishlist!', addedListItem);
-    }
-    
-    let onError = function (error){
-      swat.ui.showErrorNotification({ message: "Error Adding Product to Wishlist" });
-    }
+  let onSuccess = async function (addedListItem) {
+    console.log('Product has been added to wishlist!', addedListItem);
+  };
 
-    let lid = window.swymSelectedListId;
+  let onError = function (error) {
+    swat.ui.showErrorNotification({
+      message: 'Error Adding Product to Wishlist',
+    });
+  };
 
-    swat.addToList(lid, product, onSuccess, onError);
-}
+  let lid = window.swymSelectedListId;
+
+  swat.addToList(lid, product, onSuccess, onError);
+};
 
 /* Remove product from wishlist action. */
 
 const removeFromWishlist = (swat, product) => {
-  let onSuccess = async function(deletedProduct) {
+  let onSuccess = async function (deletedProduct) {
     console.log('Product has been removed from wishlist!', deletedProduct);
-  }
-  
-  let onError = function(error) {
-    swat.ui.showErrorNotification({ message: "Error removing Product from Wishlist" });
-  }
+  };
+
+  let onError = function (error) {
+    swat.ui.showErrorNotification({
+      message: 'Error removing Product from Wishlist',
+    });
+  };
 
   let lid = window.swymSelectedListId;
 
   swat.deleteFromList(lid, product, onSuccess, onError);
-}
+};
 
 /* Updates the state of wishlist buttons based on whether items are wishlisted. */
 
 const updateButtonState = () => {
-  const swymWishlistButtons = document.querySelectorAll('swymcs-wishlist-button');
+  const swymWishlistButtons = document.querySelectorAll(
+    'swymcs-wishlist-button',
+  );
 
   if (swymWishlistButtons) {
     swymWishlistButtons.forEach((swymWishlistButton) => {
@@ -122,8 +141,8 @@ const updateButtonState = () => {
       let isWishlisted = false;
 
       if (window.swymWishLists) {
-        window.swymWishLists.forEach(list => {
-          list.listcontents.forEach(item => {
+        window.swymWishLists.forEach((list) => {
+          list.listcontents.forEach((item) => {
             if (item.empi == empi && item.epi == epi) {
               isWishlisted = true;
             }
@@ -143,8 +162,8 @@ const updateButtonWishlistState = (elements, isWishlisted) => {
   elements.unfilledState.style.display = isWishlisted ? 'none' : 'flex';
   if (isWishlisted) {
     elements.wishlistButton.classList.add('swym-added-custom');
-    if(settings.disable_added_to_wishlist){
-       elements.wishlistButton.setAttribute('disabled', true);
+    if (settings.disable_added_to_wishlist) {
+      elements.wishlistButton.setAttribute('disabled', true);
     }
   } else {
     elements.wishlistButton.classList.remove('swym-added-custom');
@@ -155,15 +174,17 @@ const updateButtonWishlistState = (elements, isWishlisted) => {
 
 /* Render multiple wishlist popup when multiple wishlist enabled */
 
-const renderPopup = async(product) => {
+const renderPopup = async (product) => {
   let popup = document.querySelector('swym-wishlist-popup');
   let { epi, empi, du } = product;
   window.currentActiveProduct = await fetchProductsData(du);
-  window.currentActiveVariant =  currentActiveProduct.variants.find((variant) => variant.id == epi);
+  window.currentActiveVariant = currentActiveProduct.variants.find(
+    (variant) => variant.id == epi,
+  );
   window.currentActiveVariantId = epi;
   window.currentActiveProduct.url = du;
   setTimeout(popup._show.bind(popup), 100);
-} 
+};
 
 /* Fetches product data from shopify to get updated data. */
 
@@ -181,9 +202,9 @@ const addSwymEventListener = (swat) => {
     let image = event.detail.d.iu;
     let title = event.detail.d.dt;
     showCustomNotification(swat, image, title, 'remove', 1);
-    refreshList(swat); 
+    refreshList(swat);
   });
-  
+
   swat.evtLayer.addEventListener(swat.JSEvents.addedToWishlist, (event) => {
     let image = event.detail.d.iu;
     let title = event.detail.d.dt;
@@ -194,7 +215,9 @@ const addSwymEventListener = (swat) => {
   swat.evtLayer.addEventListener(swat.JSEvents.variantChanged, (data) => {
     const currentVariant = data.detail.d.variant.id;
     const currentProductId = data.detail.d.product.id;
-    const swymCustomWishlistButton = document.querySelector(`.swymcs-wishlist-button-${currentProductId}`);
+    const swymCustomWishlistButton = document.querySelector(
+      `.swymcs-wishlist-button-${currentProductId}`,
+    );
     if (swymCustomWishlistButton) {
       swymCustomWishlistButton.setAttribute('data-epi', currentVariant);
     }
@@ -202,8 +225,8 @@ const addSwymEventListener = (swat) => {
   });
 };
 
-const showCustomNotification = ( swat, image, title, action, listCount ) => {
-      let successMessage = `
+const showCustomNotification = (swat, image, title, action, listCount) => {
+  let successMessage = `
       <style>
           .swym-notification-success-inner .swym-image{ display: none !important }
           #swym-custom-notification-content { display: flex; gap: 10px; align-items: center; cursor: pointer }
@@ -215,12 +238,11 @@ const showCustomNotification = ( swat, image, title, action, listCount ) => {
           <div id="swym-custom-image-container">
               <img id="swym-custom-image" src="${image}" alt="wishlisted product image"/>
           </div>
-          <div id="swym-custom-title-conatainer"><strong>${title}</strong> has been ${action=='remove'?'removed from':'added to'} <strong> ${listCount == 1 ? 'list!' : 'lists!'}</strong></div>
+          <div id="swym-custom-title-conatainer"><strong>${title}</strong> has been ${action == 'remove' ? 'removed from' : 'added to'} <strong> ${listCount == 1 ? 'list!' : 'lists!'}</strong></div>
       </div>
     `;
-    swat.ui.showSuccessNotification({ message: successMessage });
-}
-
+  swat.ui.showSuccessNotification({ message: successMessage });
+};
 
 /* Creating a global object to assign functions */
 
@@ -235,16 +257,18 @@ const swymcsWishlistFunctions = {
   addSwymEventListener,
   fetchProductsData,
   renderPopup,
-  showCustomNotification
+  showCustomNotification,
 };
 
 /* Push the init functions into SwymCallbacks  */
 
-if (!window.SwymCallbacks) {
-  window.SwymCallbacks = [];
-}
-window.SwymCallbacks.push(swymcsWishlistFunctions.init);
+// if (!window.SwymCallbacks) {
+//   window.SwymCallbacks = [];
+// }
+// window.SwymCallbacks.push(swymcsWishlistFunctions.init);
 
 /* Expose swymcsWishlistFunctions to the global scope */
 
 window.swymcsWishlistFunctions = swymcsWishlistFunctions;
+
+export default swymcsWishlistFunctions;

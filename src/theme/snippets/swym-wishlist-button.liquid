@@ -1,7 +1,9 @@
 <swymcs-wishlist-button class="swymcs-wishlist-button" {{ block.shopify_attributes }}>
   <Button
+    x-data="{productId: {{ product.id }}}"
     id="swymcs-wishlist-button"
     class="swymcs-wishlist-button swymcs-wishlist-button-{{ product.id }}"
+    :class="{added: $store.main.productsWishlised.find(p => p.empi === parseInt(productId))}"
     data-empi="{{ product.id }}"
     data-epi="{%- if product.selected_variant -%}{{ product.selected_variant.id}}{%- else -%}{{ product.variants[0].id }}{%- endif -%}"
     data-du="{{ shop.url }}{{ product.url }}"
