@@ -160,7 +160,13 @@
               const variant = JSON.parse(success).items[0];
               const productTitle = variant.title;
               let successMessage = `<strong>${productTitle}</strong> has been added to cart!`;
-              swat.ui.showSuccessNotification({ message:successMessage }); 
+              const cartDrawer = document.querySelector('cart-drawer');
+              if (cartDrawer) {
+                cartDrawer.classList.add('active');
+                // TODO: buggy on drawer item removal, to fix
+              } else {
+                swat.ui.showSuccessNotification({ message:successMessage });
+              }
             },
             (error) => {
               button.innerHTML = originalButtonState;
