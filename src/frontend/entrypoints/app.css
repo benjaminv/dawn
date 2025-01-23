@@ -11,6 +11,14 @@
   display: none !important;
 }
 
+@layer base {
+  svg,
+  video,
+  img {
+    @apply inline-block;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
