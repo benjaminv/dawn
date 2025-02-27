@@ -1,0 +1,5 @@
+src/theme/assets
+pnpm-lock.yaml
+vite-tag.liquid
+.gitlab-ci.yml
+css-root-variables.liquid

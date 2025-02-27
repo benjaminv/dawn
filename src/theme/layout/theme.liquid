@@ -39,6 +39,8 @@
       <script src="{{ 'animations.js' | asset_url }}" defer="defer"></script>
     {%- endif -%}
 
+    {% render 'vite-tag' with 'app.js' %}
+
     {{ content_for_header }}
 
     {%- liquid
@@ -296,6 +298,8 @@
         document.documentElement.classList.add('shopify-design-mode');
       }
     </script>
+
+    {% render 'vite-tag' with 'app.css' %}
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">

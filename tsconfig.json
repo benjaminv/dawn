@@ -1,0 +1,32 @@
+{
+  "include": ["./src"],
+  "exclude": ["dist", "build", "node_modules"],
+  "compilerOptions": {
+    "target": "es2018",
+    "module": "esnext",
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "allowJs": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact",
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      // "react": ["./node_modules/preact/compat/"],
+      // "react-dom": ["./node_modules/preact/compat/"],
+      "@/*": ["src/frontend/*"],
+      "~/*": ["src/frontend/*"]
+    }
+  }
+}

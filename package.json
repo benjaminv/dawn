@@ -1,0 +1,52 @@
+{
+  "name": "dawn",
+  "version": "15.3.0",
+  "description": "shopify theme dawn with frontend tools",
+  "main": "index.js",
+  "scripts": {
+    "shopify:login": "shopify theme list --environment sync",
+    "shopify:sync": "shopify theme pull --environment sync",
+    "shopify:push": "shopify theme push --environment deployment",
+    "deploy": "npm run build && npm run shopify:push",
+    "deploy:new": "shopify theme push --path ./src/theme --unpublished",
+    "dev": "concurrently --raw --kill-others \"npm run dev:shopify\" \"npm run dev:vite\"",
+    "dev:shopify": "shopify theme dev --path ./src/theme --live-reload full-page",
+    "dev:vite": "vite",
+    "format": "prettier -w ./src --cache --plugin-search-dir=.",
+    "build": "vite build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/benjaminv/dawn.git"
+  },
+  "author": "seedme",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benjaminv/dawn/issues"
+  },
+  "homepage": "https://github.com/benjaminv/dawn#readme",
+  "devDependencies": {
+    "@by-association-only/vite-plugin-shopify-clean": "^2.2.0",
+    "@shopify/cli": "^3.75.4",
+    "@shopify/prettier-plugin-liquid": "^1.8.2",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tailwindcss/vite": "^4.0.9",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-import-resolver-typescript": "^3.8.3",
+    "prettier": "^3.5.2",
+    "prettier-plugin-tailwindcss": "^0.6.11",
+    "sass": "^1.85.1",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vite-plugin-mkcert": "^1.17.6",
+    "vite-plugin-shopify": "^3.2.0"
+  },
+  "dependencies": {
+    "alpinejs": "^3.14.8",
+    "swiper": "^11.2.4"
+  }
+}
