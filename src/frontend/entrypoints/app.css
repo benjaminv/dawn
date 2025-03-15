@@ -38,6 +38,10 @@
   --color-BoneHex: 'var(--color-border-grey)';
   --color-PaymentTermsBackgroundColor: 'rgb(var(--payment-terms-background-color))';
 
+  /* spacing */
+  --spacing: initial;
+  --spacing: 0.4rem; /* overcome to 16px per rem because theme has html font-size 62.5% */
+
   /* animations */
   @keyframes fade-in-scale {
     0% {
