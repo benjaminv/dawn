@@ -287,6 +287,7 @@ function debounce(fn, wait) {
   };
 }
 
+
 function throttle(fn, delay) {
   let lastCall = 0;
   return function (...args) {
@@ -1297,7 +1298,7 @@ class CartPerformance {
     const endMarker = performance.mark(`${metricName}:end`);
 
     performance.measure(
-      benchmarkName,
+      metricName,
       `${metricName}:start`,
       `${metricName}:end`
     );
@@ -1308,7 +1309,7 @@ class CartPerformance {
     const endMarker = performance.mark(`${metricName}:end`);
 
     performance.measure(
-      benchmarkName,
+      metricName,
       startMarker.name,
       `${metricName}:end`
     );
@@ -1323,10 +1324,9 @@ class CartPerformance {
     const endMarker = performance.mark(`${metricName}:end`);
 
     performance.measure(
-      benchmarkName,
+      metricName,
       `${metricName}:start`,
       `${metricName}:end`
     );
   }
 }
-
