@@ -8,35 +8,35 @@
 /* tailwind configurations */
 @theme {
   /* custom fonts */
-  --font-serif: 'IBM Plex Serif', 'serif';
-  --font-sans: 'IBM Plex Sans', 'sans-serif';
-  --font-mono: 'IBM Plex Mono', 'monospace';
+  --font-serif: 'IBM Plex Serif', serif;
+  --font-sans: 'IBM Plex Sans', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
 
   /* screen breakpoints */
   --breakpoint-*: initial;
-  --breakpoint-sm: '640px';
-  --breakpoint-md: '750px';
-  --breakpoint-lg: '990px';
-  --breakpoint-xl: '1300px';
-  --breakpoint-xxl: '1480px';
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 750px;
+  --breakpoint-lg: 990px;
+  --breakpoint-xl: 1300px;
+  --breakpoint-xxl: 1480px;
 
   /* more colours */
-  --color-Background: 'rgb(var(--color-background))';
-  --color-GradientBackground: 'var(--gradient-background)';
-  --color-Foreground: 'rgb(var(--color-foreground))';
-  --color-ForegroundLight: 'rgb(var(--color-foreground-light))';
-  --color-Green: 'rgb(var(--color-green))';
-  --color-Brown: 'rgb(var(--color-brown))';
-  --color-Button: 'rgb(var(--color-button))';
-  --color-ButtonText: 'rgb(var(--color-button-text))';
-  --color-SecondaryButtonText: 'rgb(var(--color-secondary-button-text))';
-  --color-Link: 'rgb(var(--color-link))';
-  --color-Bone: 'rgb(var(--color-bone))';
-  --color-BadgeForeground: 'rgb(var(--color-badge-foreground))';
-  --color-BadgeBackground: 'rgb(var(--color-badge-background))';
-  --color-BadgeBorder: 'rgb(var(--color-badge-border))';
-  --color-BoneHex: 'var(--color-border-grey)';
-  --color-PaymentTermsBackgroundColor: 'rgb(var(--payment-terms-background-color))';
+  --color-Background: rgb(var(--color-background));
+  --color-GradientBackground: var(--gradient-background);
+  --color-Foreground: rgb(var(--color-foreground));
+  --color-ForegroundLight: rgb(var(--color-foreground-light));
+  --color-Green: rgb(var(--color-green));
+  --color-Brown: rgb(var(--color-brown));
+  --color-Button: rgb(var(--color-button));
+  --color-ButtonText: rgb(var(--color-button-text));
+  --color-SecondaryButtonText: rgb(var(--color-secondary-button-text));
+  --color-Link: rgb(var(--color-link));
+  --color-Bone: rgb(var(--color-bone));
+  --color-BadgeForeground: rgb(var(--color-badge-foreground));
+  --color-BadgeBackground: rgb(var(--color-badge-background));
+  --color-BadgeBorder: rgb(var(--color-badge-border));
+  --color-BoneHex: var(--color-border-grey);
+  --color-PaymentTermsBackgroundColor: rgb(var(--payment-terms-background-color));
 
   /* spacing */
   --spacing: initial;
