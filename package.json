@@ -41,7 +41,7 @@
     "vite-plugin-shopify": "^3.2.0"
   },
   "dependencies": {
-    "@glidejs/glide": "^3.7.1",
-    "alpinejs": "^3.14.9"
+    "alpinejs": "^3.14.9",
+    "swiper": "^11.2.6"
   }
 }
