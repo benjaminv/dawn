@@ -57,6 +57,12 @@ button,
   display: grid;
 }
 
+/* fix hidden issues when dawn removes !important on display:none; it should not have had */
+.loading__spinner.hidden {
+  @apply !hidden;
+}
+
+/* custom font faces */
 .ibm-plex-mono-thin {
   font-family: 'IBM Plex Mono', monospace;
   font-weight: 100;

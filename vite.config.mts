@@ -11,6 +11,7 @@ export default defineConfig({
   },
   server: {
     https: true,
+    cors: true,
   },
   plugins: [
     cleanup({
