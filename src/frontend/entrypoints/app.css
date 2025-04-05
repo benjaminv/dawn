@@ -47,19 +47,20 @@ button,
   @apply !font-sans;
 }
 
+/* resolve conflict with Dawn base.css */
 /* Dawn uses flexbox for the grid */
 .grid {
   @apply flex;
 }
 
 /* thus we need to define the grid display */
-.d-grid {
+.tw-grid {
   display: grid;
 }
 
-/* fix hidden issues when dawn removes !important on display:none; it should not have had */
-.loading__spinner.hidden {
-  @apply !hidden;
+/* Dawn uses hidden: {display: none !important } */
+.tw-hidden {
+  @apply hidden;
 }
 
 /* custom font faces */
