@@ -37,7 +37,7 @@ runs:
         if ! shopify theme list --store ${{ inputs.SHOPIFY_FLAG_STORE }} | grep -q -w ${{ steps.stats.outputs.branch_name }}; then
           echo "Deploying to new theme"
           echo 'JSON_RESPONSE<<EOF' >> $GITHUB_OUTPUT
-          shopify theme pull --theme --live --path src/theme --only templates/*.json --only locales/*.json --only config/settings_data.json --only sections/*.json  >> $GITHUB_OUTPUT || true
+          shopify theme pull --live --store ${{ inputs.SHOPIFY_FLAG_STORE }} --path src/theme --only templates/*.json --only locales/*.json --only config/settings_data.json --only sections/*.json  >> $GITHUB_OUTPUT || true
           shopify theme push --unpublished --json --nodelete --store ${{ inputs.SHOPIFY_FLAG_STORE }} --theme ${{ steps.stats.outputs.branch_name }} --path src/theme >> $GITHUB_OUTPUT || true
           echo 'EOF' >> $GITHUB_OUTPUT
         else
