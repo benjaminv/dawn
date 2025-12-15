@@ -1,8 +1,8 @@
-name: Deploy to main branch
+name: Deploy to develop branch
 
 on:
   push:
-    branches: [main]
+    branches: [develop]
 
 jobs:
   deploy-to-production:
