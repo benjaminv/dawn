@@ -1,0 +1,46 @@
+name: Remove Preview
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The name of the Github Environment to run the workflow in
+        required: true
+        type: string
+
+jobs:
+  clean_preview:
+    name: Remove Preview
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4 # Action checkout@v4
+
+      - name: Install Dependencies
+        uses: ./.github/actions/install-dependencies # Action install-dependencies
+        id: install-dependencies
+        with:
+          BRANCH: ${{ github.ref_name }}
+          NODE_VERSION: ${{ vars.NODE_VERSION }}
+      
+      - name: Stats
+        uses: ./.github/actions/stats
+        id: stats
+
+      - name: Delete Preview # Delete preview theme
+        shell: bash
+        env:
+          # Password generated from Theme Access app
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}
+        run: |
+          if ! shopify theme list --store ${{ vars.SHOPIFY_FLAG_STORE }} | grep -q -w "${{ steps.stats.outputs.branch_name }}"; then
+            echo "Couldn't find theme to delete";   
+          else
+            for theme in $(shopify theme list --store ${{ vars.SHOPIFY_FLAG_STORE }} | grep -Ei "${{ steps.stats.outputs.branch_name }}" | grep -Eiv "\[live\]");
+            do if [[ $theme =~ [\#*] ]];
+            then echo "Deleting ${theme:1} 🗑️";
+            shopify theme delete ${theme:1} --force;                
+            fi;
+          done;
+          fi

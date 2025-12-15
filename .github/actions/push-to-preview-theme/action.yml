@@ -1,0 +1,75 @@
+name: Push Preview
+description: Pushes the built preview to Shopify using the branch name as the theme name
+inputs:
+  SHOPIFY_FLAG_STORE:
+    description: "Shopify next env"
+    required: true
+  SHOPIFY_CLI_THEME_TOKEN:
+    description: "Shopify theme token"
+    required: true
+
+outputs:
+  preview_url:
+    description: Preview URL
+    value: ${{ steps.urls.outputs.preview_url }}
+  editor_url:
+    description: Editor URL
+    value: ${{ steps.urls.outputs.editor_url }}
+  failed:
+    description: Failed
+    value: ${{ steps.failed.outputs.failed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Stats
+      uses: ./.github/actions/stats
+      id: stats
+
+    - name: Create Preview Link # and safe the returned value in an output object
+      id: link
+      shell: bash
+      env:
+        # Password generated from Theme Access app
+        SHOPIFY_CLI_THEME_TOKEN: ${{ inputs.SHOPIFY_CLI_THEME_TOKEN }}
+      run: |
+        echo "Deploying to theme name: ${{ steps.stats.outputs.branch_name }}"
+        if ! shopify theme list --store ${{ inputs.SHOPIFY_FLAG_STORE }} | grep -q -w ${{ steps.stats.outputs.branch_name }}; then
+          echo "Deploying to new theme"
+          echo 'JSON_RESPONSE<<EOF' >> $GITHUB_OUTPUT
+          shopify theme pull --theme --live --path src/theme --only templates/*.json --only locales/*.json --only config/settings_data.json --only sections/*.json  >> $GITHUB_OUTPUT || true
+          shopify theme push --unpublished --json --nodelete --store ${{ inputs.SHOPIFY_FLAG_STORE }} --theme ${{ steps.stats.outputs.branch_name }} --path src/theme >> $GITHUB_OUTPUT || true
+          echo 'EOF' >> $GITHUB_OUTPUT
+        else
+          echo "Deploying to existing theme"
+          echo 'JSON_RESPONSE<<EOF' >> $GITHUB_OUTPUT
+          shopify theme push --json --nodelete --store ${{ inputs.SHOPIFY_FLAG_STORE }} --theme ${{ steps.stats.outputs.branch_name }} --path src/theme --ignore templates/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
+          echo 'EOF' >> $GITHUB_OUTPUT
+        fi
+
+    - name: Format Data # Safe output in a temporary txt file and extract the last line with requested links
+      run: |
+        echo '${{ steps.link.outputs.JSON_RESPONSE }}' > 'temp.txt'
+        echo 'LINK<<DEL' >> $GITHUB_OUTPUT
+        tail -n1 temp.txt >> $GITHUB_OUTPUT
+        echo 'DEL' >> $GITHUB_OUTPUT
+      id: temp
+      shell: bash
+
+    - name: Output Failure
+      if: ${{ failure() }}
+      id: failed
+      shell: bash
+      run: |
+        echo "failed=true" >> $GITHUB_OUTPUT
+
+    - name: Log URL's
+      id: urls
+      run: |
+        echo "Preview URL: ${{ fromJSON(steps.temp.outputs.LINK).theme.preview_url }}"
+        echo "Editor URL: ${{ fromJSON(steps.temp.outputs.LINK).theme.editor_url }}"
+        # output urls to github output
+        echo "preview_url=${{ fromJSON(steps.temp.outputs.LINK).theme.preview_url }}" >> $GITHUB_OUTPUT
+        echo "editor_url=${{ fromJSON(steps.temp.outputs.LINK).theme.editor_url }}" >> $GITHUB_OUTPUT
+
+      shell: bash

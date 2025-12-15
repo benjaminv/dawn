@@ -1,0 +1,51 @@
+name: Deploy to tagged themes
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The name of the Github Environment to run the workflow in
+        required: true
+        type: string
+
+jobs:
+  deploy-tagged-themes:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4 # Action checkout@v4
+
+      - name: Install Dependencies
+        uses: ./.github/actions/install-dependencies # Action install-dependencies
+        id: install-dependencies
+        with:
+          BRANCH: ${{ github.ref_name }}
+          NODE_VERSION: ${{ vars.NODE_VERSION }}
+
+      - name: Push to all themes tagged [main] excluding [live]
+        shell: bash
+        id: push-to-tagged-themes
+        env:
+          SHOPIFY_FLAG_STORE: ${{ vars.SHOPIFY_FLAG_STORE }}
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}
+          SHOPIFY_CLI_TTY: 0
+        run: |
+          echo "Deploying to tagged themes"
+          for theme in $(shopify theme list --store ${{ vars.SHOPIFY_FLAG_STORE }} | grep -Ei "\[main\]" | grep -Eiv "\[live\]");
+            do if [[ $theme =~ [\#*] ]];
+            then echo "Deploy ${theme:1}";
+            shopify theme push --theme ${theme:1} --store ${{ vars.SHOPIFY_FLAG_STORE }} --json --path src/theme --nodelete --ignore templates/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
+          fi;
+          done;
+
+      # if no error on id link, then echo successful
+      - name: Status Success
+        if: steps.link.outcome == 'success'
+        run: echo "Deployed to all [master] tagged themes"
+        shell: bash
+
+      # if error on id link, then echo failed
+      - name: Status Failure
+        if: steps.link.outcome == 'failure'
+        run: echo "Failed to deploy to all [master] tagged themes"
+        shell: bash

@@ -1,0 +1,13 @@
+name: Preview theme clean up
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  remove-preview-theme-production:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/remove-preview-theme.yml
+    secrets: inherit
+    with:
+      environment: production

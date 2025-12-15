@@ -1,0 +1,13 @@
+name: Deploy to previews
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  deploy-preview-theme-production:
+    name: Deploy Preview Theme
+    uses: ./.github/workflows/deploy-to-preview-theme.yml
+    secrets: inherit
+    with:
+      environment: production

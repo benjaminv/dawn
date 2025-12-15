@@ -1,0 +1,52 @@
+name: Install Dependencies
+description: Install dependencies and build theme assets during theme deployment
+inputs:
+  BRANCH:
+    description: 'Branch'
+    required: false
+  NODE_VERSION:
+    description: 'Node version'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.NODE_VERSION }}
+        cache: pnpm
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - uses: actions/cache@v4
+      id: pnpm-cache
+      with:
+        path: '**/node_modules'
+        # use node version in key
+        key: ${{ runner.os }}-${{ inputs.NODE_VERSION }}-modules-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.1
+        bundler: 'latest'
+
+    - name: Install Shopify CLI
+      run: npm install -g @shopify/cli@3.68.0 @shopify/theme@latest
+      shell: bash
+
+    - name: Check Version
+      run: shopify version
+      shell: bash
+    
+    - name: Install pnpm dependencies
+      if: steps.pnpm-cache.outputs.cache-hit != 'true'
+      run: pnpm install --frozen-lockfile
+      shell: bash
+
+    - name: Build theme assets
+      run: pnpm run build
+      shell: bash

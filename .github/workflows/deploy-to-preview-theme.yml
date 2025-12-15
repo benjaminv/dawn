@@ -1,0 +1,37 @@
+name: Deploy preview
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The name of the Github Environment to run the workflow in
+        required: true
+        type: string
+
+jobs:
+  deploy_preview:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4 # Action checkout@v4
+
+      - name: Install Dependencies
+        uses: ./.github/actions/install-dependencies # Action install-dependencies
+        id: install-dependencies
+        with:
+          BRANCH: ${{ github.ref_name }}
+          NODE_VERSION: ${{ vars.NODE_VERSION }}
+
+      - name: Using Env
+        run: |
+          echo "Using some env vars"
+          echo "${{ vars.SHOPIFY_FLAG_STORE }}"
+          echo "${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}"
+          echo "${{ inputs.environment }}"
+
+      - name: Push Preview
+        uses: ./.github/actions/push-to-preview-theme
+        id: push_preview
+        with:
+          SHOPIFY_FLAG_STORE: ${{ vars.SHOPIFY_FLAG_STORE }}
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}

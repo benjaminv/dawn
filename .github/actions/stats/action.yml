@@ -1,0 +1,24 @@
+name: Stats
+description: Outputs stats like date and time
+
+outputs:
+  date:
+    description: Date
+    value: ${{ steps.data.outputs.date }}
+  time:
+    description: Time
+    value: ${{ steps.data.outputs.time }}
+  branch_name:
+    description: Branch name
+    value: ${{ steps.data.outputs.branch_name }}
+
+runs:
+  using: composite
+  steps:
+    - name: Get Date, Time, and Branch name
+      id: data
+      run: |
+        echo "date=$(date +'%d-%m-%Y ')" >> $GITHUB_OUTPUT
+        echo "time=$(date +'%H:%M:%S')" >> $GITHUB_OUTPUT
+        echo "branch_name=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_OUTPUT
+      shell: bash

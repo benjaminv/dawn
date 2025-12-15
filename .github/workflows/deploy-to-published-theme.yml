@@ -1,0 +1,36 @@
+name: Deploy to live themes
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: The name of the Github Environment to run the workflow in
+        required: true
+        type: string
+
+jobs:
+  deploy-live-theme:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4 # Action checkout@v4
+
+      - name: Install Dependencies
+        uses: ./.github/actions/install-dependencies # Action install-dependencies
+        id: install-dependencies
+        with:
+          BRANCH: ${{ github.ref_name }}
+          NODE_VERSION: ${{ vars.NODE_VERSION }}
+
+      - name: Push to Published Theme
+        shell: bash
+        id: push-to-published-theme
+        env:
+          SHOPIFY_FLAG_STORE: ${{ vars.SHOPIFY_FLAG_STORE }}
+          SHOPIFY_CLI_THEME_TOKEN: ${{ secrets.SHOPIFY_CLI_THEME_TOKEN }}
+          SHOPIFY_CLI_TTY: 0
+        run: |
+          echo "Deploying to published theme"
+          echo 'JSON_RESPONSE<<EOF' >> $GITHUB_OUTPUT
+          shopify theme push --store ${{ vars.SHOPIFY_FLAG_STORE }} --path src/theme --live --allow-live --nodelete --ignore templates/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
+          echo 'EOF' >> $GITHUB_OUTPUT
