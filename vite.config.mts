@@ -10,8 +10,13 @@ export default defineConfig({
     sourcemap: true,
   },
   server: {
-    https: true,
-    cors: true,
+    allowedHosts: [".trycloudflare.com"],
+    cors: {
+      origin: [
+        /^https?:\/\/(?:(?:[^:]+\.)?localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/,
+        /^https?:\/\/[^/]+\.myshopify\.com$/,
+      ],
+    },
   },
   plugins: [
     cleanup({
@@ -22,6 +27,7 @@ export default defineConfig({
       themeRoot: './src/theme',
       sourceCodeDir: './src/frontend',
       entrypointsDir: './src/frontend/entrypoints',
+      tunnel: true,
     }),
     mkcert(),
   ],
