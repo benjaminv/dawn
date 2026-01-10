@@ -34,7 +34,7 @@ jobs:
           for theme in $(shopify theme list --store ${{ vars.SHOPIFY_FLAG_STORE }} | grep -Ei "\[main\]" | grep -Eiv "\[live\]");
             do if [[ $theme =~ [\#*] ]];
             then echo "Deploy ${theme:1}";
-            shopify theme push --theme ${theme:1} --store ${{ vars.SHOPIFY_FLAG_STORE }} --json --path src/theme --nodelete --ignore templates/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
+            shopify theme push --theme ${theme:1} --store ${{ vars.SHOPIFY_FLAG_STORE }} --json --path src/theme --nodelete --ignore templates/**/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
           fi;
           done;
 
