@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "run-p -sr \"shopify:dev -- {@}\" \"vite:dev\" --",
     "deploy": "run-s \"vite:build\" \"shopify:push -- {@}\" --",
+    "build": "vite build",
     "vite:dev": "vite",
     "vite:build": "vite build",
     "shopify:login": "shopify theme list --store dawn-original --environment sync",

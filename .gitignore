@@ -7,36 +7,29 @@
 .Trashes
 ehthumbs.db
 Thumbs.db
-
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 node_modules
-dist
-dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
-!.vscode/extensions.json
 .idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-src/theme/assets/.vite
-src/theme/assets/app-*
+
+# Shopify theme files
+theme/locales/*.json
+theme/templates/*.json
+theme/templates/customers/*.json
+theme/sections/*.json
+theme/config/settings_data.json
+theme/.shopify
+.shopify
+
+# Vite-shopify plugin files
+.vite
 vite-tag.liquid
-manifest.json
-src/theme/assets/manifest.json
-!theme-editor.js
-src/theme/snippets/vite-tag.liquid
-src/theme/.shopify/metafields.json
+
+# Vite compiled or other build distro
+dist
+src/theme/assets/*.js.map
+src/theme/assets/app-*.css
+src/theme/assets/app-*.js
+src/theme/assets/product-sticky-atc-*.js
+
