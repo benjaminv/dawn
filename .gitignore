@@ -15,8 +15,7 @@ node_modules
 
 # Shopify theme files
 theme/locales/*.json
-theme/templates/*.json
-theme/templates/customers/*.json
+theme/templates/**/*.json
 theme/sections/*.json
 theme/config/settings_data.json
 theme/.shopify

@@ -10,12 +10,12 @@ allow-live = false
 [environments.deployment]
 store = "dawn-original.myshopify.com"
 path = "./src/theme"
-ignore = ['config/settings_data.json', 'templates/*.json', "sections/*.json", "locales/*.json"]
+ignore = ['config/settings_data.json', 'templates/**/*.json', "sections/*.json", "locales/*.json"]
 output = "json"
 
 [environments.sync]
 store = "dawn-original.myshopify.com"
 ignore = []
-only = ["templates/*.json", "sections/*.json", "locales/*.json", "config/*.json"]
+only = ["templates/**/*.json", "sections/*.json", "locales/*.json", "config/*.json"]
 nodelete = true
 path = "./src/theme"

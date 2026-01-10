@@ -32,5 +32,5 @@ jobs:
         run: |
           echo "Deploying to published theme"
           echo 'JSON_RESPONSE<<EOF' >> $GITHUB_OUTPUT
-          shopify theme push --store ${{ vars.SHOPIFY_FLAG_STORE }} --path src/theme --live --allow-live --nodelete --ignore templates/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
+          shopify theme push --store ${{ vars.SHOPIFY_FLAG_STORE }} --path src/theme --live --allow-live --nodelete --ignore templates/**/*.json --ignore locales/*.json --ignore config/settings_data.json --ignore sections/*.json >> $GITHUB_OUTPUT || true
           echo 'EOF' >> $GITHUB_OUTPUT
