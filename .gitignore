@@ -14,11 +14,11 @@ node_modules
 .idea
 
 # Shopify theme files
-theme/locales/*.json
-theme/templates/**/*.json
-theme/sections/*.json
-theme/config/settings_data.json
-theme/.shopify
+src/theme/locales/*.json
+src/theme/templates/**/*.json
+src/theme/sections/*.json
+src/theme/config/settings_data.json
+src/theme/.shopify
 .shopify
 
 # Vite-shopify plugin files
