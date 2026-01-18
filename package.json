@@ -15,9 +15,8 @@
     "vite:build": "vite build",
     "shopify:login": "shopify theme list --store dawn-original --environment sync",
     "shopify:dev": "shopify theme dev --store dawn-original --path ./src/theme --live-reload full-page",
-    "shopify:push": "shopify theme push --store dawn-original --path ./src/theme --environment deployment",
-    "shopify:sync": "shopify theme pull --store dawn-original --environment sync",
-    "pull:content": "shopify theme pull --store dawn-original --path ./src/theme --only templates/**/*.json --only sections/*.json --only locales/*.json --only config/settings_data.json",
+    "shopify:push": "shopify theme push --store dawn-original --path ./src/theme --nodelete --environment deployment",
+    "pull:content": "shopify theme pull --store dawn-original --path ./src/theme --environment sync",
     "pull:all": "shopify theme pull --store dawn-original --path ./src/theme",
     "format": "prettier -w ./src --cache --plugin-search-dir=."
   },
