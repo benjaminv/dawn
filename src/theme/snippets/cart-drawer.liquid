@@ -75,6 +75,8 @@
         </button>
       </div>
       <cart-drawer-items
+        view-event-payload="{{ cart | standard_event_data: 'view', context: 'dialog' | escape }}"
+        view-event-trigger="manual"
         {% if cart == empty %}
           class=" is-empty"
         {% endif %}
@@ -150,9 +152,16 @@
                             <p class="caption-with-letter-spacing light">{{ item.product.vendor }}</p>
                           {%- endif -%}
 
-                          <a href="{{ item.url }}" class="cart-item__name h4 break">
-                            {{- item.product.title | escape -}}
-                          </a>
+                          <div class="cart-item__title">
+                            <a href="{{ item.url }}" class="cart-item__name h4 break">
+                              {{- item.product.title | escape -}}
+                            </a>
+                            {%- assign cart_disclosure_modal_id = 'CartDisclosureModal-drawer-' | append: item.key | replace: ':', '-' -%}
+                            {%- render 'cart-disclosure-indicator',
+                              product: item.product,
+                              modal_id: cart_disclosure_modal_id
+                            -%}
+                          </div>
 
                           {%- if item.original_price != item.final_price -%}
                             <div class="cart-item__discounted-prices">
@@ -258,7 +267,10 @@
                             {%- endif -%}
 
                             {%- if item.variant.available and item.unit_price_measurement -%}
-                              {% render 'unit-price', price: item.unit_price, measurement: item.unit_price_measurement %}
+                              {% render 'unit-price',
+                                price: item.unit_price,
+                                measurement: item.unit_price_measurement
+                              %}
                             {%- endif -%}
                           </div>
                         </td>
@@ -305,6 +317,7 @@
                                     class="quantity__input"
                                     type="number"
                                     data-quantity-variant-id="{{ item.variant.id }}"
+                                    data-quantity-line-key="{{ item.key }}"
                                     name="updates[]"
                                     value="{{ item.quantity }}"
                                     {% # theme-check-disable %}

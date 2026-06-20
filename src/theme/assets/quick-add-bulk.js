@@ -115,6 +115,7 @@ if (!customElements.get('quick-add-bulk')) {
         this.selectProgressBar().classList.remove('hidden');
 
         const ids = Object.keys(items);
+        const linesUpdate = this.startCartLinesUpdate(items);
         const body = JSON.stringify({
           updates: items,
           sections: this.getSectionsToRender().map((section) => section.section),
@@ -122,15 +123,23 @@ if (!customElements.get('quick-add-bulk')) {
         });
 
         fetch(`${routes.cart_update_url}`, { ...fetchConfig(), ...{ body } })
-          .then((response) => {
-            return response.text();
-          })
-          .then((state) => {
-            const parsedState = JSON.parse(state);
+          .then((response) => response.json())
+          .then((parsedState) => {
+            if (parsedState.errors) {
+              throw Object.assign(new Error(parsedState.errors), { code: 'INVALID' });
+            }
+
+            linesUpdate?.resolve(parsedState);
             this.renderSections(parsedState, ids);
             publish(PUB_SUB_EVENTS.cartUpdate, { source: 'quick-add', cartData: parsedState });
           })
-          .catch(() => {
+          .catch((e) => {
+            if (e.code !== 'INVALID') console.error(e);
+            this.dispatchCartErrorEvent(
+              e.code === 'INVALID' ? e.message : window.cartStrings.error,
+              e.code || 'SERVICE_UNAVAILABLE'
+            );
+            linesUpdate?.reject(e);
             // Commented out for now and will be fixed when BE issue is done https://github.com/Shopify/shopify/issues/440605
             // e.target.setCustomValidity(error);
             // e.target.reportValidity();

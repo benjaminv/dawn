@@ -32,10 +32,11 @@ class FacetFiltersForm extends HTMLElement {
   static renderPage(searchParams, event, updateURLHash = true) {
     FacetFiltersForm.searchParamsPrev = searchParams;
     const sections = FacetFiltersForm.getSections();
+    const updateEvent = FacetFiltersForm.startUpdateEvent(searchParams);
     const countContainer = document.getElementById('ProductCount');
     const countContainerDesktop = document.getElementById('ProductCountDesktop');
     const loadingSpinners = document.querySelectorAll(
-      '.facets-container .loading__spinner, facet-filters-form .loading__spinner'
+      '.facets-container .loading__spinner, facet-filters-form .loading__spinner',
     );
     loadingSpinners.forEach((spinner) => spinner.classList.remove('hidden'));
     document.getElementById('ProductGridContainer').querySelector('.collection').classList.add('loading');
@@ -51,31 +52,87 @@ class FacetFiltersForm extends HTMLElement {
       const filterDataUrl = (element) => element.url === url;
 
       FacetFiltersForm.filterData.some(filterDataUrl)
-        ? FacetFiltersForm.renderSectionFromCache(filterDataUrl, event)
-        : FacetFiltersForm.renderSectionFromFetch(url, event);
+        ? FacetFiltersForm.renderSectionFromCache(filterDataUrl, event, updateEvent)
+        : FacetFiltersForm.renderSectionFromFetch(url, event, updateEvent);
     });
 
     if (updateURLHash) FacetFiltersForm.updateURLHash(searchParams);
   }
 
-  static renderSectionFromFetch(url, event) {
+  static startUpdateEvent(searchParams) {
+    const { SearchUpdateEvent, CollectionUpdateEvent } = window.StandardEvents || {};
+    if (!SearchUpdateEvent && !CollectionUpdateEvent) return;
+
+    const facetsForm = document.querySelector('facet-filters-form');
+    const facetsContainer = document.querySelector('.facets-container');
+    const collectionId = facetsContainer?.dataset.collectionId || null;
+    const collectionHandle = facetsContainer?.dataset.collectionHandle || '';
+    const currentCount = parseInt(document.getElementById('ProductCount')?.dataset.productCount) || 0;
+    const urlSearchParams = new URLSearchParams(searchParams);
+    const isSearchPage = facetsContainer?.dataset.template === 'search';
+    const isCollectionPage = facetsContainer?.dataset.template === 'collection';
+    const dispatchTarget = facetsForm || document;
+
+    let deferred;
+
+    if (isSearchPage) {
+      deferred = SearchUpdateEvent.createPromise();
+      dispatchTarget.dispatchEvent(
+        new SearchUpdateEvent({
+          search: {
+            query: urlSearchParams.get('q') || '',
+            productFilters: SearchUpdateEvent.parseProductFilters(urlSearchParams),
+            sortKey: SearchUpdateEvent.getSortKey(urlSearchParams),
+          },
+          promise: deferred.promise,
+        }),
+      );
+    } else if (isCollectionPage) {
+      // collectionId is null for auto-generated collections (/collections/all,
+      // /collections/vendors/<x>, etc.) — the SSE schema accepts that.
+      deferred = CollectionUpdateEvent.createPromise();
+      dispatchTarget.dispatchEvent(
+        new CollectionUpdateEvent({
+          collection: { id: collectionId, handle: collectionHandle, productsCount: currentCount },
+          productFilters: CollectionUpdateEvent.parseProductFilters(urlSearchParams),
+          sortKey: CollectionUpdateEvent.getSortKey(urlSearchParams),
+          promise: deferred.promise,
+        }),
+      );
+    }
+
+    if (!deferred) return;
+
+    return {
+      resolve: (filteredCount) => {
+        deferred.resolve({ [isSearchPage ? 'totalCount' : 'productsCount']: filteredCount });
+      },
+      reject: deferred.reject,
+    };
+  }
+
+  static renderSectionFromFetch(url, event, updateEvent) {
     fetch(url)
       .then((response) => response.text())
-      .then((responseText) => {
-        const html = responseText;
+      .then((html) => {
         FacetFiltersForm.filterData = [...FacetFiltersForm.filterData, { html, url }];
-        FacetFiltersForm.renderFilters(html, event);
-        FacetFiltersForm.renderProductGridContainer(html);
-        FacetFiltersForm.renderProductCount(html);
-        if (typeof initializeScrollAnimationTrigger === 'function') initializeScrollAnimationTrigger(html.innerHTML);
+        FacetFiltersForm.renderSection(html, event, updateEvent);
+      })
+      .catch((error) => {
+        console.error(error);
+        updateEvent?.reject(error);
       });
   }
 
-  static renderSectionFromCache(filterDataUrl, event) {
+  static renderSectionFromCache(filterDataUrl, event, updateEvent) {
     const html = FacetFiltersForm.filterData.find(filterDataUrl).html;
+    FacetFiltersForm.renderSection(html, event, updateEvent);
+  }
+
+  static renderSection(html, event, updateEvent) {
     FacetFiltersForm.renderFilters(html, event);
     FacetFiltersForm.renderProductGridContainer(html);
-    FacetFiltersForm.renderProductCount(html);
+    FacetFiltersForm.renderProductCount(html, updateEvent);
     if (typeof initializeScrollAnimationTrigger === 'function') initializeScrollAnimationTrigger(html.innerHTML);
   }
 
@@ -92,29 +149,35 @@ class FacetFiltersForm extends HTMLElement {
       });
   }
 
-  static renderProductCount(html) {
-    const count = new DOMParser().parseFromString(html, 'text/html').getElementById('ProductCount').innerHTML;
+  static renderProductCount(html, updateEvent) {
+    const parsedHtml = new DOMParser().parseFromString(html, 'text/html');
+    const sourceCount = parsedHtml.getElementById('ProductCount');
+    const count = sourceCount.innerHTML;
     const container = document.getElementById('ProductCount');
     const containerDesktop = document.getElementById('ProductCountDesktop');
     container.innerHTML = count;
+    container.dataset.productCount = sourceCount.dataset.productCount || '';
+    container.dataset.totalCount = sourceCount.dataset.totalCount || '';
     container.classList.remove('loading');
     if (containerDesktop) {
       containerDesktop.innerHTML = count;
       containerDesktop.classList.remove('loading');
     }
     const loadingSpinners = document.querySelectorAll(
-      '.facets-container .loading__spinner, facet-filters-form .loading__spinner'
+      '.facets-container .loading__spinner, facet-filters-form .loading__spinner',
     );
     loadingSpinners.forEach((spinner) => spinner.classList.add('hidden'));
+
+    updateEvent?.resolve(parseInt(sourceCount.dataset.productCount) || 0);
   }
 
   static renderFilters(html, event) {
     const parsedHTML = new DOMParser().parseFromString(html, 'text/html');
     const facetDetailsElementsFromFetch = parsedHTML.querySelectorAll(
-      '#FacetFiltersForm .js-filter, #FacetFiltersFormMobile .js-filter, #FacetFiltersPillsForm .js-filter'
+      '#FacetFiltersForm .js-filter, #FacetFiltersFormMobile .js-filter, #FacetFiltersPillsForm .js-filter',
     );
     const facetDetailsElementsFromDom = document.querySelectorAll(
-      '#FacetFiltersForm .js-filter, #FacetFiltersFormMobile .js-filter, #FacetFiltersPillsForm .js-filter'
+      '#FacetFiltersForm .js-filter, #FacetFiltersFormMobile .js-filter, #FacetFiltersPillsForm .js-filter',
     );
 
     // Remove facets that are no longer returned from the server
@@ -164,14 +227,28 @@ class FacetFiltersForm extends HTMLElement {
         FacetFiltersForm.renderMobileCounts(countsToRender, document.getElementById(closestJSFilterID));
 
         const newFacetDetailsElement = document.getElementById(closestJSFilterID);
-        const newElementSelector = newFacetDetailsElement.classList.contains('mobile-facets__details')
-          ? `.mobile-facets__close-button`
-          : `.facets__summary`;
-        const newElementToActivate = newFacetDetailsElement.querySelector(newElementSelector);
 
         const isTextInput = event.target.getAttribute('type') === 'text';
 
-        if (newElementToActivate && !isTextInput) newElementToActivate.focus();
+        if (!isTextInput) {
+          // Try to return focus to the same checkbox the user just toggled,
+          // re-selecting it from the freshly rendered HTML by its id.
+          const originatingInputId = event.target.id;
+          const matchingInput = originatingInputId
+            ? newFacetDetailsElement.querySelector(`#${CSS.escape(originatingInputId)}`)
+            : null;
+
+          if (matchingInput) {
+            matchingInput.focus();
+          } else {
+            // Fallback to summary/close button if the checkbox can't be found
+            const fallbackSelector = newFacetDetailsElement.classList.contains('mobile-facets__details')
+              ? `.mobile-facets__close-button`
+              : `.facets__summary`;
+            const fallbackElement = newFacetDetailsElement.querySelector(fallbackSelector);
+            if (fallbackElement) fallbackElement.focus();
+          }
+        }
       }
     }
   }
