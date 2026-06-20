@@ -1,3 +1,8 @@
+product-component,
+collection-component {
+  display: block;
+}
+
 :root {
   --alpha-button-background: 1;
   --alpha-button-border: 1;
@@ -144,6 +149,16 @@ body:has(.section-header .drawer-menu) .announcement-bar-section .page-width {
 .isolate {
   position: relative;
   z-index: 0;
+}
+
+.content-for-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-for-layout > .shopify-section:last-child {
+  flex-grow: 1;
 }
 
 .section + .section {

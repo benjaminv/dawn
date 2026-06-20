@@ -103,6 +103,13 @@ if (!customElements.get('quick-order-list')) {
         return JSON.parse(this.querySelector('[data-cart-contents]')?.innerHTML || '[]');
       }
 
+      getCartQuantityForLine(id) {
+        const cartQuantity = super.getCartQuantityForLine(id);
+        if (cartQuantity > 0) return cartQuantity;
+
+        return this.cartVariantsForProduct.includes(parseInt(id, 10)) ? 1 : 0;
+      }
+
       onChange(event) {
         const inputValue = parseInt(event.target.value);
         this.cleanErrorMessageOnType(event);
@@ -328,6 +335,7 @@ if (!customElements.get('quick-order-list')) {
 
         this.toggleLoading(true);
         const url = this.dataset.url || window.location.pathname;
+        const linesUpdate = this.startCartLinesUpdate(items);
 
         const body = JSON.stringify({
           updates: items,
@@ -339,9 +347,13 @@ if (!customElements.get('quick-order-list')) {
         this.setErrorMessage();
 
         fetch(`${routes.cart_update_url}`, { ...fetchConfig(), ...{ body } })
-          .then((response) => response.text())
-          .then(async (state) => {
-            const parsedState = JSON.parse(state);
+          .then((response) => response.json())
+          .then((parsedState) => {
+            if (parsedState.errors) {
+              throw Object.assign(new Error(parsedState.errors), { code: 'INVALID' });
+            }
+
+            linesUpdate?.resolve(parsedState);
             this.renderSections(parsedState);
             publish(PUB_SUB_EVENTS.cartUpdate, {
               source: this.id,
@@ -349,8 +361,13 @@ if (!customElements.get('quick-order-list')) {
             });
           })
           .catch((e) => {
-            console.error(e);
-            this.setErrorMessage(window.cartStrings.error);
+            if (e.code !== 'INVALID') console.error(e);
+            this.dispatchCartErrorEvent(
+              e.code === 'INVALID' ? e.message : window.cartStrings.error,
+              e.code || 'SERVICE_UNAVAILABLE'
+            );
+            linesUpdate?.reject(e);
+            this.setErrorMessage(e.code === 'INVALID' ? e.message : window.cartStrings.error);
           })
           .finally(() => {
             this.queue.length === 0 && this.toggleLoading(false);

@@ -1070,6 +1070,8 @@ class VariantSelects extends HTMLElement {
       const target = this.getInputForEventTarget(event.target);
       this.updateSelectionMetadata(event);
 
+      this.dispatchProductSelectEvent();
+
       publish(PUB_SUB_EVENTS.optionValueSelectionChange, {
         data: {
           event,
@@ -1078,6 +1080,69 @@ class VariantSelects extends HTMLElement {
         },
       });
     });
+  }
+
+  getAllSelectedOptions() {
+    const options = [];
+    this.querySelectorAll('fieldset, .product-form__input--dropdown').forEach((group) => {
+      const checked = group.querySelector('input:checked') || group.querySelector('select option[selected]');
+      if (checked) {
+        options.push({ name: checked.dataset.optionName || '', value: checked.value });
+      }
+    });
+    return options;
+  }
+
+  dispatchProductSelectEvent() {
+    const { ProductSelectEvent } = window.StandardEvents || {};
+    if (!ProductSelectEvent) return;
+
+    const deferred = ProductSelectEvent.createPromise();
+    this.pendingSelectPromise = deferred;
+
+    this.dispatchEvent(
+      new ProductSelectEvent({
+        product: {
+          id: this.dataset.productId,
+          title: this.dataset.productTitle,
+          handle: this.dataset.productHandle,
+        },
+        selectedOptions: this.getAllSelectedOptions(),
+        promise: deferred.promise,
+      })
+    );
+  }
+
+  takePendingSelectPromise() {
+    const deferred = this.pendingSelectPromise;
+    this.pendingSelectPromise = null;
+    return deferred;
+  }
+
+  resolvePendingSelectPromise(variant, sourceVariantSelects = this) {
+    const deferred = this.takePendingSelectPromise();
+    if (!deferred) return;
+
+    if (variant) {
+      deferred.resolve({
+        variant: {
+          id: variant.id,
+          title: variant.title,
+          availableForSale: variant.available,
+          price: {
+            amount: sourceVariantSelects?.dataset.selectedPriceAmount,
+            currencyCode: sourceVariantSelects?.dataset.currencyCode,
+          },
+          selectedOptions: this.getAllSelectedOptions(),
+        },
+      });
+    } else {
+      deferred.resolve({ variant: null });
+    }
+  }
+
+  rejectPendingSelectPromise(error) {
+    this.takePendingSelectPromise()?.reject(error);
   }
 
   updateSelectionMetadata({ target }) {
@@ -1239,6 +1304,69 @@ class BulkAdd extends HTMLElement {
 
   get requestStarted() {
     return this._requestStarted;
+  }
+
+  getCartQuantityForLine(id) {
+    const input = this.querySelector(`#Quantity-${id}`);
+    return parseInt(input?.dataset.cartQuantity || input?.getAttribute('value') || '0', 10) || 0;
+  }
+
+  startCartLinesUpdate(items) {
+    const { CartLinesUpdateEvent } = window.StandardEvents || {};
+    if (!CartLinesUpdateEvent) return;
+
+    const linesByAction = Object.entries(items).reduce((groups, [variantId, quantity]) => {
+      const nextQuantity = parseInt(quantity, 10);
+      const currentQuantity = this.getCartQuantityForLine(variantId);
+
+      if (Number.isNaN(nextQuantity) || currentQuantity === nextQuantity) return groups;
+
+      const action = currentQuantity === 0 ? 'add' : nextQuantity === 0 ? 'remove' : 'update';
+      let line;
+      if (action === 'add') {
+        line = { merchandiseId: variantId, quantity: nextQuantity };
+      } else {
+        const lineKey = this.querySelector(`[data-quantity-variant-id="${variantId}"]`)?.dataset.quantityLineKey;
+        // No AJAX line key on the row — likely cached HTML rendered before this
+        // attribute landed. Skip rather than emit an event with id: ''.
+        if (!lineKey) return groups;
+        line = { id: lineKey, quantity: nextQuantity };
+      }
+
+      if (!groups[action]) groups[action] = [];
+      groups[action].push(line);
+      return groups;
+    }, {});
+
+    const deferreds = Object.entries(linesByAction).map(([action, lines]) => {
+      const deferred = CartLinesUpdateEvent.createPromise();
+      this.dispatchEvent(
+        new CartLinesUpdateEvent({
+          action,
+          context: 'product',
+          lines,
+          promise: deferred.promise,
+        })
+      );
+      return deferred;
+    });
+
+    return {
+      resolve: (parsedState) => {
+        const payload = { cart: CartLinesUpdateEvent.createCartFromAjaxResponse(parsedState) };
+        deferreds.forEach((deferred) => deferred.resolve(payload));
+      },
+      reject: (error) => {
+        deferreds.forEach((deferred) => deferred.reject(error));
+      },
+    };
+  }
+
+  dispatchCartErrorEvent(message, code) {
+    const { CartErrorEvent } = window.StandardEvents || {};
+    if (!CartErrorEvent) return;
+
+    this.dispatchEvent(new CartErrorEvent({ error: message, code }));
   }
 
   resetQuantityInput(id) {

@@ -32,3 +32,6 @@ src/theme/assets/app-*.css
 src/theme/assets/app-*.js
 src/theme/assets/product-sticky-atc-*.js
 
+# Archives
+*.zip
+

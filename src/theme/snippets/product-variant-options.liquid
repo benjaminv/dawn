@@ -50,6 +50,7 @@
   {%- capture input_dataset -%}
     data-product-url="{{ value.product_url }}"
     data-option-value-id="{{ value.id }}"
+    data-option-name="{{ option.name | escape }}"
   {%- endcapture -%}
 
   {%- capture label_unavailable -%}
